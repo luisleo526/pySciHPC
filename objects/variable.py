@@ -19,19 +19,18 @@ class Var:
         size = np.array(size, dtype=int)
         ghc = np.array(ghc, dtype=int)
         axis_data = np.array(axis_data, dtype=np.dtype('float, float'))
-        mesh = (axis_data['f1'] - axis_data['f0']) / (size - 1)
 
         for i in range(3):
             match i:
                 case 0:
-                    self.dx = mesh[i]
                     self.x_axis = np.linspace(*axis_data[i], num=size[i])
+                    self.dx = self.x_axis[1] - self.x_axis[0]
                 case 1:
-                    self.dy = mesh[i]
                     self.y_axis = np.linspace(*axis_data[i], num=size[i] if size[i] > 1 else 2)
+                    self.dy = self.y_axis[1] - self.y_axis[0]
                 case 2:
-                    self.dz = mesh[i]
                     self.z_axis = np.linspace(*axis_data[i], num=size[i] if size[i] > 1 else 2)
+                    self.dz = self.z_axis[1] - self.z_axis[0]
 
         self.data = DataBlock(ghc * 2 + size, dtype=np.float64)
         self.size = np.product(size)
