@@ -28,10 +28,10 @@ class Var:
                     self.x_axis = np.linspace(*axis_data[i], num=size[i])
                 case 1:
                     self.dy = mesh[i]
-                    self.y_axis = np.linspace(*axis_data[i], num=size[i])
+                    self.y_axis = np.linspace(*axis_data[i], num=size[i] if size[i] > 1 else 2)
                 case 2:
                     self.dz = mesh[i]
-                    self.z_axis = np.linspace(*axis_data[i], num=size[i])
+                    self.z_axis = np.linspace(*axis_data[i], num=size[i] if size[i] > 1 else 2)
 
         self.data = DataBlock(ghc * 2 + size, dtype=np.float64)
         self.size = np.product(size)
