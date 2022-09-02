@@ -45,7 +45,7 @@ def create_Var(size: list[int], ghc: int, axis_data: list[tuple[float, float]]):
 
     size = np.array(size, dtype=int)
     ghc_array = np.array(ghc_array, dtype=int)
-    axis_data = np.array(axis_data, dtype=np.dtype('float, float'))
+    axis_data = np.array(axis_data, dtype=np.dtype('float64, float64'))
 
     x_axis = np.linspace(*axis_data[0], num=size[0])
     dx = x_axis[1] - x_axis[0]
