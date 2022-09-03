@@ -7,12 +7,12 @@ from objects.variable import Var
 
 
 @njit
-def find_fx_eno(f: Var, c: np.ndarray, eno_scheme: Callable) -> np.ndarray:
+def find_fx_eno(f: Var, c: np.ndarray, eno_scheme: Callable, *args) -> np.ndarray:
     fx = np.zeros_like(f.data)
 
     for j in range(f.shape[1]):
         for k in range(f.shape[2]):
-            fpm = eno_scheme(f.data[:, j, k], f.shape[0], f.ghc)
+            fpm = eno_scheme(f.data[:, j, k], f.shape[0], f.ghc, *args)
             fh = np.zeros_like(fpm[0])
             for i in range(f.data.shape[0]):
                 if c[i] > 0:
