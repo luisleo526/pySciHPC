@@ -1,26 +1,14 @@
-from typing import Callable
-
 import numpy as np
 from numba import njit
 
 from objects.variable import Var
+from typing import Callable
 
 
-@njit
-def find_fx_eno(f: Var, c: np.ndarray, eno_scheme: Callable, *args) -> np.ndarray:
+@njit(parallel=True, fastmath=True)
+def find_fx(f: Var, c: np.ndarray, scheme: Callable, *args):
     fx = np.zeros_like(f.data)
-
     for j in range(f.shape[1]):
         for k in range(f.shape[2]):
-            fpm = eno_scheme(f.data[:, j, k], f.shape[0], f.ghc, *args)
-            fh = np.zeros_like(fpm[0])
-            for i in range(f.data.shape[0]):
-                if c[i] > 0:
-                    fh[i] = fpm[1, i]
-                else:
-                    fh[i] = fpm[0, i]
-            for i in range(f.shape[0]):
-                I = i + f.ghc
-                fx[I, j, k] = (fh[I] - fh[I - 1]) / f.dx
-
+            fx[:, j, k] = scheme(f.data[:, j, k], c[:, j, k], f.dx, *args)
     return fx

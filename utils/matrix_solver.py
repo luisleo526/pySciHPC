@@ -29,6 +29,9 @@ def TDMA(a: np.ndarray, b: np.ndarray, c: np.ndarray, d: np.ndarray):
 
 @njit((float64[:, :], float64[:, :], float64[:, :], float64[:, :]))
 def twin_dec(a: np.ndarray, b: np.ndarray, aa: np.ndarray, bb: np.ndarray):
+    '''
+    Decompose the coefficient matrix  [[A, B], [AA, BB]]
+    '''
 
     N = a.shape[1]
 
@@ -65,6 +68,9 @@ def twin_dec(a: np.ndarray, b: np.ndarray, aa: np.ndarray, bb: np.ndarray):
 
 @njit(float64[:, :](float64[:, :], float64[:, :], float64[:, :], float64[:, :], float64[:], float64[:]))
 def twin_bks(a: np.ndarray, b: np.ndarray, aa: np.ndarray, bb: np.ndarray, s: np.ndarray, ss: np.ndarray):
+    '''
+    Solve for X, Y using decomposed coefficient matrix -> [[A, B],[AA,BB]] * [[X], [Y]] = [[S],[SS]]
+    '''
 
     N = a.shape[1]
     for i in range(1, N):
