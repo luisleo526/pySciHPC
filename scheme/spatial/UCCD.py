@@ -4,7 +4,7 @@ from .CCD import CCD_coeffs_bc
 import numpy as np
 
 
-@njit(float64[:, :, :](int32, float64), parallel=True, fastmath=True)
+@njit(float64[:, :, :](int32, float64), parallel=True, fastmath=True, cache=True)
 def UCCD_coeffs(N: int32, dx: float64):
     a1: float64 = 0.875
     b1: float64 = 0.1251282341599089
@@ -63,7 +63,7 @@ def UCCD_coeffs(N: int32, dx: float64):
     return np.stack((AU, BU, AAU, BBU, AD, BD, AAD, BBD))
 
 
-@njit(float64[:, :](float64[:], int32, float64), parallel=True, fastmath=True)
+@njit(float64[:, :](float64[:], int32, float64), parallel=True, fastmath=True, cache=True)
 def UCCD_src(f: np.ndarray, N: int32, dx: float64):
     SU = np.zeros(N, dtype='float64')
     SSU = np.zeros(N, dtype='float64')
@@ -97,7 +97,7 @@ def UCCD_src(f: np.ndarray, N: int32, dx: float64):
     return np.stack((SU, SSU, SD, SSD))
 
 
-@njit(float64[:](float64[:], float64[:], float64), parallel=True, fastmath=True)
+@njit(float64[:](float64[:], float64[:], float64), parallel=True, fastmath=True, cache=True)
 def UCCD(f: np.ndarray, c: np.ndarray, dx: float64):
     AU, BU, AAU, BBU, AD, BD, AAD, BBD = UCCD_coeffs(f.size, dx)
     SU, SSU, SD, SSD = UCCD_src(f, f.size, dx)

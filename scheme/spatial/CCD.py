@@ -3,7 +3,7 @@ from numba import njit, float64, int32, prange
 import numpy as np
 
 
-@njit((float64[:, :], float64[:, :], float64[:, :], float64[:, :], float64))
+@njit((float64[:, :], float64[:, :], float64[:, :], float64[:, :], float64), cache=True)
 def CCD_coeffs_bc(A: np.ndarray, B: np.ndarray, AA: np.ndarray, BB: np.ndarray, dx: float64):
     # Boundary condition -- left
     A[1, 0] = 1.0
@@ -32,7 +32,7 @@ def CCD_coeffs_bc(A: np.ndarray, B: np.ndarray, AA: np.ndarray, BB: np.ndarray, 
     BB[0, -1] = 8.5
 
 
-@njit(float64[:, :, :](int32, float64), parallel=True, fastmath=True)
+@njit(float64[:, :, :](int32, float64), parallel=True, fastmath=True, cache=True)
 def CCD_coeffs(N: int32, dx: float64):
     A = np.zeros((3, N), dtype='float64')
     B = np.zeros((3, N), dtype='float64')
@@ -62,7 +62,7 @@ def CCD_coeffs(N: int32, dx: float64):
     return np.stack((A, B, AA, BB))
 
 
-@njit(float64[:, :](float64[:], int32, float64), parallel=True, fastmath=True)
+@njit(float64[:, :](float64[:], int32, float64), parallel=True, fastmath=True, cache=True)
 def CCD_src(f: np.ndarray, N: int32, dx: float64):
     S = np.zeros(N, dtype='float64')
     SS = np.zeros(N, dtype='float64')
@@ -80,7 +80,7 @@ def CCD_src(f: np.ndarray, N: int32, dx: float64):
     return np.stack((S, SS))
 
 
-@njit(float64[:](float64[:], float64[:], float64))
+@njit(float64[:](float64[:], float64[:], float64), cache=True)
 def CCD(f: np.ndarray, c: np.ndarray, dx: float64):
     A, B, AA, BB = CCD_coeffs(f.size, dx)
     S, SS = CCD_src(f, f.size, dx)

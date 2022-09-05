@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/CFD_benchmarks.iml" filepath="$PROJECT_DIR$/.idea/CFD_benchmarks.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/pycfd.iml" filepath="$PROJECT_DIR$/.idea/pycfd.iml" />
     </modules>
   </component>
 </project>
