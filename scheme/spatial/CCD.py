@@ -86,3 +86,11 @@ def CCD(f: np.ndarray, c: np.ndarray, dx: float64):
     S, SS = CCD_src(f, f.size, dx)
     fx, fxx = twin_bks(A, B, AA, BB, S, SS)
     return fx
+
+
+@njit(float64[:, :](float64[:], float64[:], float64), cache=True)
+def CCD_full(f: np.ndarray, c: np.ndarray, dx: float64):
+    A, B, AA, BB = CCD_coeffs(f.size, dx)
+    S, SS = CCD_src(f, f.size, dx)
+    fx, fxx = twin_bks(A, B, AA, BB, S, SS)
+    return np.stack((fx, fxx))
