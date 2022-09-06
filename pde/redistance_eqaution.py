@@ -5,6 +5,7 @@ from scheme.temporal.runge_kutta import rk3
 from numba import int32, float64, prange, boolean
 from boundary_conditions.zero_order import zero_order
 from utils.utils import l2_norm
+from typing import Callable
 
 
 @njit(float64[:, :, :](float64[:, :, :], float64[:], int32, int32, float64[:, :, :], float64, boolean))
@@ -44,10 +45,9 @@ def redistance_source(f: np.ndarray, grids: np.ndarray, ghc: int32, ndim: int32,
     return - sign * (grad - 1.0) + _lambda * delta * grad
 
 
-@njit(float64[:, :, :](float64[:, :, :], float64[:], int32, int32, float64, float64, float64, boolean), parallel=True,
-      fastmath=True)
-def rk3_redistance(phi: np.ndarray, grids: np.ndarray, ghc: int32, ndim: int32, ls_width: float64, dt: float64,
-                   period: float64, init: bool):
+@njit(float64[:, :, :], parallel=True, fastmath=True)
+def solve_redistance(temproal: Callable, phi: np.ndarray, grids: np.ndarray, ghc: int32, ndim: int32, ls_width: float64,
+                     dt: float64, period: float64, init: bool):
     if init:
         phi = phi / np.amax(Godunov_WENO_grad(phi, grids, ghc, ndim))
 
@@ -59,7 +59,7 @@ def rk3_redistance(phi: np.ndarray, grids: np.ndarray, ghc: int32, ndim: int32, 
         cnt += 1
         t += dt
         phi_tmp = np.copy(phi)
-        phi = rk3(dt, phi, grids, ghc, ndim, redistance_source, zero_order, sign0, ls_width, init)
+        phi = temproal(dt, phi, grids, ghc, ndim, redistance_source, zero_order, sign0, ls_width, init)
         error = l2_norm(phi_tmp, phi, ndim, ghc)
         if cnt % 100 == 0:
             print(cnt, error)
