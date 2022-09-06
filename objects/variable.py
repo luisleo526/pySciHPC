@@ -3,8 +3,7 @@ import numpy as np
 
 class Var:
 
-    def __init__(self, size: list[int], ghc: int, axis_data: list[tuple[float, float]]):
-
+    def __init__(self, size: list[int], ghc: int, axis_data: list[tuple[float, float]], num_of_data: int = 1):
         assert len(size) == len(axis_data)
         assert all([x[1] > x[0] for x in axis_data])
         self.ndim = len(size)
@@ -27,4 +26,14 @@ class Var:
 
         self.z = np.linspace(*axis_data[2], num=self.shape[2] if self.shape[2] > 1 else 2)
         self.dz = self.z[1] - self.z[0]
-        self.data = np.zeros(ghc_array * 2 + self.shape, dtype=np.float64)
+        self.data = np.stack([np.zeros(ghc_array * 2 + self.shape, dtype=np.float64) for _ in range(num_of_data)])
+
+        self.grids = np.array([self.dx, self.dy, self.dz], dtype='float64')
+
+    def core(self, i=0):
+        if self.ndim == 1:
+            return self.data[i][self.ghc:-self.ghc, 0, 0]
+        elif self.ndim == 2:
+            return self.data[i][self.ghc:-self.ghc, self.ghc:-self.ghc, 0]
+        else:
+            return self.data[i][self.ghc:-self.ghc, self.ghc:-self.ghc, self.ghc:-self.ghc]

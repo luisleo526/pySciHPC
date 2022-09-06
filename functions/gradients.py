@@ -1,12 +1,13 @@
 import numpy as np
 from numba import int32, float64, njit, prange
 
-from boundary_conditions.interpolation import zero_order_x, zero_order_y, zero_order_z
+from boundary_conditions.zero_order import zero_order_x, zero_order_y, zero_order_z, zero_order
 from scheme.spatial.ENO import WENO_p, WENO_m, WENO_weights_JS
 
 
-@njit(float64[:, :, :](), parallel=True, fastmath=True)
-def Godunov_WENO_grad(f: np.ndarray, ghc: int32, ndim: int32, dx: float64, dy: float64, dz: float64):
+@njit(float64[:, :, :](float64[:, :, :], float64[:], int32, int32), parallel=True, fastmath=True)
+def Godunov_WENO_grad(f: np.ndarray, grids: np.ndarray, ghc: int32, ndim: int32):
+    dx, dy, dz = grids
     grad = np.zeros_like(f)
 
     up = np.zeros_like(f)
@@ -85,15 +86,11 @@ def Godunov_WENO_grad(f: np.ndarray, ghc: int32, ndim: int32, dx: float64, dy: f
                 wmm = -min(wm[i, j, k], 0.0)
                 wmp = max(wm[i, j, k], 0.0)
 
-                if f.data[i, j, k] > 0.0:
+                if f[i, j, k] > 0.0:
                     grad[i, j, k] = np.sqrt(max(upm, ump) ** 2 + max(vpm, vmp) ** 2 + max(wpm, wmp) ** 2)
                 else:
                     grad[i, j, k] = np.sqrt(max(upp, umm) ** 2 + max(vpp, vmm) ** 2 + max(wpp, wmm) ** 2)
 
-    zero_order_x(grad, ghc)
-    if ndim > 1:
-        zero_order_y(grad, ghc)
-    if ndim > 2:
-        zero_order_z(grad, ghc)
+    zero_order(grad, ghc, ndim)
 
     return grad
