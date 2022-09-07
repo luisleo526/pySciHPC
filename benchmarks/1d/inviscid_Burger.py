@@ -5,11 +5,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 from numba import njit, float64, int32
 
-from boundary_conditions.periodic import periodic
-from functions.derivatives import find_fx
-from objects.variable import Var
-from scheme.temporal.runge_kutta import rk3
-from utils.utils import find_order, l2_norm
+from pycfd.boundary_conditions import periodic
+from pycfd.functions import find_fx
+from pycfd.objects import Scalar
+from pycfd.scheme.temporal import rk3
+from pycfd.utils import find_order, l2_norm
 
 
 @njit(parallel=True, fastmath=True)
@@ -29,26 +29,29 @@ def find_exact_solution(x: np.ndarray, t: float64, ts: float64):
 
 
 def run(N, source, bc, ghc, ts, scheme, dt, plot=False):
-    phi = Var([N + 1], ghc, [(0.0, 1.0)])
-    for i in range(phi.shape[0]):
-        phi.data[0][i + phi.ghc, 0, 0] = np.sin(2.0 * np.pi * phi.x[i]) / (2.0 * np.pi * ts)
+    geo_dict = dict(_size=[N], ghc=ghc, _axis_data=[(0.0, 1.0)])
+
+    geo = Scalar(**geo_dict, no_data=True)
+    phi = Scalar(**geo_dict, no_axis=True)
+
+    phi.core = np.sin(2.0 * np.pi * geo.mesh.x) / (2.0 * np.pi * ts)
     bc(phi.data[0], phi.ghc, phi.ndim)
 
     t = 0.0
     while t < 0.75 * ts:
         t += dt
-        phi.data[0] = rk3(dt, phi.data[0], phi.grids, phi.ghc, phi.ndim, source, bc, phi.data[0], scheme)
+        phi.data[0] = rk3(dt, phi.data[0], geo.grids, phi.ghc, phi.ndim, source, bc, phi.data[0], scheme)
 
-    phi_exact = Var([N + 1], ghc, [(0.0, 1.0)])
-    phi_exact.data[0][ghc:N + ghc + 1, 0, 0] = find_exact_solution(phi_exact.x, t, ts)
+    phi_exact = Scalar(**geo_dict, no_axis=True)
+    phi_exact.core = find_exact_solution(geo.mesh.x, t, ts)
     bc(phi_exact.data[0], phi_exact.ghc, phi_exact.ndim)
 
     if plot:
         fig, ax = plt.subplots()
-        ax.plot(phi.data[0][:, 0, 0])
-        ax.plot(phi_exact.data[0][:, 0, 0])
+        ax.plot(geo.x, phi.core)
+        ax.plot(geo.x, phi_exact.core)
 
-    return l2_norm(phi_exact.data[0], phi.data[0], phi.ndim, phi.ghc)
+    return l2_norm(phi_exact.core, phi.core)
 
 
 if __name__ == "__main__":

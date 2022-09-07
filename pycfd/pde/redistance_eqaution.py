@@ -1,11 +1,13 @@
-from functions.level_set import *
-from functions.gradients import Godunov_WENO_grad
-import numpy as np
-from scheme.temporal.runge_kutta import rk3
-from numba import int32, float64, prange, boolean
-from boundary_conditions.zero_order import zero_order
-from utils.utils import l2_norm
 from typing import Callable
+
+from numba import int32, boolean, float64, njit, prange
+
+from pycfd.boundary_conditions import zero_order
+from pycfd.functions.gradients import Godunov_WENO_grad
+from pycfd.functions.level_set import Delta, Sign
+from pycfd.utils import l2_norm
+
+import numpy as np
 
 
 @njit(float64[:, :, :](float64[:, :, :], float64[:], int32, int32, float64[:, :, :], float64, boolean))
@@ -45,7 +47,7 @@ def redistance_source(f: np.ndarray, grids: np.ndarray, ghc: int32, ndim: int32,
     return - sign * (grad - 1.0) + _lambda * delta * grad
 
 
-@njit(float64[:, :, :], parallel=True, fastmath=True)
+@njit(parallel=True, fastmath=True)
 def solve_redistance(temproal: Callable, phi: np.ndarray, grids: np.ndarray, ghc: int32, ndim: int32, ls_width: float64,
                      dt: float64, period: float64, init: bool):
     if init:
@@ -60,7 +62,7 @@ def solve_redistance(temproal: Callable, phi: np.ndarray, grids: np.ndarray, ghc
         t += dt
         phi_tmp = np.copy(phi)
         phi = temproal(dt, phi, grids, ghc, ndim, redistance_source, zero_order, sign0, ls_width, init)
-        error = l2_norm(phi_tmp, phi, ndim, ghc)
+        error = l2_norm(phi_tmp, phi)
         if cnt % 100 == 0:
             print(cnt, error)
         if error < 1.0e-14 or t > period:

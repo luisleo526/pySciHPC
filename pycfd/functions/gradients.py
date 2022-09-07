@@ -1,12 +1,15 @@
 import numpy as np
 from numba import int32, float64, njit, prange
 
-from boundary_conditions.zero_order import zero_order_x, zero_order_y, zero_order_z, zero_order
-from scheme.spatial.ENO import WENO_p, WENO_m, WENO_weights_JS
+from pycfd.boundary_conditions.zero_order import zero_order_x, zero_order_y, zero_order_z, zero_order
+from pycfd.scheme.spatial.ENO import WENO_p, WENO_m, WENO_weights_JS
+from pycfd.scheme.spatial.CCD import CCD
+from pycfd.functions.derivatives import find_fx, find_fy, find_fz
 
 
 @njit(float64[:, :, :](float64[:, :, :], float64[:], int32, int32), parallel=True, fastmath=True)
 def Godunov_WENO_grad(f: np.ndarray, grids: np.ndarray, ghc: int32, ndim: int32):
+    assert ndim > 1
     dx, dy, dz = grids
     grad = np.zeros_like(f)
 
@@ -35,21 +38,20 @@ def Godunov_WENO_grad(f: np.ndarray, grids: np.ndarray, ghc: int32, ndim: int32)
     zero_order_x(up, ghc)
     zero_order_x(um, ghc)
 
-    if ndim > 1:
-        for i in prange(f.shape[0]):
-            for k in prange(f.shape[2]):
-                for j in prange(1, f.shape[1]):
-                    df[i, j, k] = (f[i, j, k] - f[i, j - 1, k]) / dy
-        zero_order_y(df, ghc)
-        for i in prange(f.shape[0]):
-            for k in prange(f.shape[2]):
-                for j in prange(ghc, f.shape[1] - ghc):
-                    vp[i, j, k] = WENO_p(df[i, j - 1, k], df[i, j, k], df[i, j + 1, k], df[i, j + 2, k],
-                                         df[i, j + 3, k], WENO_weights_JS)
-                    vm[i, j, k] = WENO_m(df[i, j - 2, k], df[i, j - 1, k], df[i, j, k], df[i, j + 1, k],
-                                         df[i, j + 2, k], WENO_weights_JS)
-        zero_order_y(vp, ghc)
-        zero_order_y(vm, ghc)
+    for i in prange(f.shape[0]):
+        for k in prange(f.shape[2]):
+            for j in prange(1, f.shape[1]):
+                df[i, j, k] = (f[i, j, k] - f[i, j - 1, k]) / dy
+    zero_order_y(df, ghc)
+    for i in prange(f.shape[0]):
+        for k in prange(f.shape[2]):
+            for j in prange(ghc, f.shape[1] - ghc):
+                vp[i, j, k] = WENO_p(df[i, j - 1, k], df[i, j, k], df[i, j + 1, k], df[i, j + 2, k],
+                                     df[i, j + 3, k], WENO_weights_JS)
+                vm[i, j, k] = WENO_m(df[i, j - 2, k], df[i, j - 1, k], df[i, j, k], df[i, j + 1, k],
+                                     df[i, j + 2, k], WENO_weights_JS)
+    zero_order_y(vp, ghc)
+    zero_order_y(vm, ghc)
 
     if ndim > 2:
         for i in prange(f.shape[0]):
@@ -94,3 +96,13 @@ def Godunov_WENO_grad(f: np.ndarray, grids: np.ndarray, ghc: int32, ndim: int32)
     zero_order(grad, ghc, ndim)
 
     return grad
+
+
+@njit(float64[:, :, :](float64[:, :, :], float64[:], int32, int32), parallel=True, fastmath=True)
+def CCD_grad(f: np.ndarray, grids: np.ndarray, ghc: int32, ndim: int32):
+    dx, dy, dz = grids
+    fx = find_fx(f, dx, f, CCD)
+    fy = find_fy(f, dy, f, CCD)
+    fz = find_fz(f, dz, f, CCD)
+
+    return np.sqrt(fx ** 2 + fy ** 2 + fz ** 2)
