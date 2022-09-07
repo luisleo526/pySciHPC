@@ -4,7 +4,7 @@ import numpy as np
 from numba import float64, njit, prange, int32
 
 
-@njit(float64[:](float64[:, :, :], float64, float64, float64, int32, int32), fastmath=True, parallel=True)
+@njit(float64[:](float64[:, :, :], float64, float64, float64, int32, int32), fastmath=True, parallel=True, nogil=True)
 def find_mass_vol(x, eta, density, dv, ndim, ghc):
     h = Heaviside(x, eta)
     vol = 0.0

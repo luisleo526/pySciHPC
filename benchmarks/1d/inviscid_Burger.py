@@ -38,6 +38,7 @@ def run(N, source, bc, ghc, ts, scheme, dt, plot=False):
     phi.core = np.sin(2.0 * np.pi * geo.mesh.x) / (2.0 * np.pi * ts)
     bc(phi.data[0], phi.ghc, phi.ndim)
 
+    cpu_time = -time.time()
     t = 0.0
     while t < 0.75 * ts:
         t += dt
@@ -52,7 +53,8 @@ def run(N, source, bc, ghc, ts, scheme, dt, plot=False):
         ax.plot(geo.x, phi.core)
         ax.plot(geo.x, phi_exact.core)
 
-    return l2_norm(phi_exact.core, phi.core)
+    error = l2_norm(phi_exact.core, phi.core)
+    return error, cpu_time + time.time()
 
 
 if __name__ == "__main__":
@@ -60,7 +62,5 @@ if __name__ == "__main__":
                          input('Choose scheme (CCD, UCCD, WENO_JS, WENO_Z, CRWENO, CRWENO_LD): '))
     data = {}
     for i in range(5, 11):
-        data[2 ** i] = [None, -time.time()]
-        data[2 ** i][0] = run(2 ** i, BurgerEq_source_1d, periodic, 3, 2.0, run_scheme, 0.1 * 1.0 / 2 ** 10)
-        data[2 ** i][1] += time.time()
+        data[2 ** i] = run(2 ** i, BurgerEq_source_1d, periodic, 3, 2.0, run_scheme, 0.1 * 1.0 / 2 ** 10)
     find_order(data)

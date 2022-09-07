@@ -5,12 +5,19 @@ from pycfd.objects import Scalar, Vector
 from pycfd.objects import LevelSetFunction
 from pycfd.pde.convection_equation import pure_convection
 from pycfd.pde.mass_preserving_level_set import mpls
+from pycfd.pde.mass_preserving_level_set2 import mpls2
 from pycfd.scheme.spatial import UCCD, WENO_JS
 from pycfd.scheme.temporal import rk3, euler
 from pycfd.utils import VTKPlotter
 from pycfd.functions.gradients import CCD_grad
+from pycfd.utils import l2_norm
+
+from numba import set_num_threads
 
 if __name__ == "__main__":
+
+    set_num_threads(16)
+
     geo_dict = dict(_size=[64, 64], ghc=3, _axis_data=[(0.0, 1.0), (0.0, 1.0)], num_of_data=1)
     geo = Scalar(**geo_dict, no_data=True)
     ls_dict = dict(interface_width=1.5 * geo.dx, density_ratio=1.0)
@@ -24,6 +31,7 @@ if __name__ == "__main__":
     t = 0.0
 
     phi.core = -np.sqrt((geo.mesh.x - 0.5) ** 2 + (geo.mesh.y - 0.75) ** 2) + 0.15
+    ic = np.copy(phi.core)
     zero_order(phi.data[0], geo.ghc, geo.ndim)
 
     plotter.create()
@@ -48,6 +56,7 @@ if __name__ == "__main__":
         if cnt % 5 == 0:
             print(f"time: {t}")
             phi.print_error(np.product(geo.grids[:geo.ndim]))
+            print("=" * 30)
 
         t = t + dt
         cnt += 1
@@ -57,10 +66,12 @@ if __name__ == "__main__":
         zero_order(vel.x.data[0], geo.ghc, geo.ndim)
         zero_order(vel.y.data[0], geo.ghc, geo.ndim)
 
-        if cnt % 200 == 0:
+        if cnt % int(0.25 / dt) == 0:
             plotter.create()
             plotter.add_scalar(phi.core, "phi")
             plotter.add_vector(vel.core, "velocity")
             plotter.close()
 
-    plotter.joins(dt * 200)
+    plotter.joins(dt * int(0.25 / dt))
+
+    print(l2_norm(ic, phi.core))

@@ -29,6 +29,7 @@ def run(N, source, bc, ghc, c, scheme, dt, plot=False):
     c_array = np.ones_like(phi.data[0]) * c
 
     t = 0.0
+    cpu_time = -time.time()
     while t < 2.0:
         t += dt
         phi.data[0] = rk3(dt, phi.data[0], geo.grids, phi.ghc, phi.ndim, source, bc, c_array, scheme)
@@ -42,7 +43,8 @@ def run(N, source, bc, ghc, c, scheme, dt, plot=False):
         ax.plot(geo.x, phi.core)
         ax.plot(geo.x, phi_exact.core)
 
-    return l2_norm(phi_exact.core, phi.core)
+    error = l2_norm(phi_exact.core, phi.core)
+    return error, cpu_time + time.time()
 
 
 if __name__ == "__main__":
@@ -50,15 +52,11 @@ if __name__ == "__main__":
                          input('Choose scheme (CCD, UCCD, WENO_JS, WENO_Z, CRWENO, CRWENO_LD): '))
     data = {}
     for i in range(5, 11):
-        data[2 ** i] = [None, -time.time()]
-        data[2 ** i][0] = run(2 ** i, convection_source_1d, periodic, 3, 1.0, run_scheme, 0.1 * 2.0 / 2 ** 10)
-        data[2 ** i][1] += time.time()
+        data[2 ** i] = run(2 ** i, convection_source_1d, periodic, 3, 1.0, run_scheme, 0.1 * 2.0 / 2 ** 10)
     print("---Positive speed---")
     find_order(data)
     data = {}
     for i in range(5, 11):
-        data[2 ** i] = [None, -time.time()]
-        data[2 ** i][0] = run(2 ** i, convection_source_1d, periodic, 3, -1.0, run_scheme, 0.1 * 2.0 / 2 ** 10)
-        data[2 ** i][1] += time.time()
+        data[2 ** i] = run(2 ** i, convection_source_1d, periodic, 3, -1.0, run_scheme, 0.1 * 2.0 / 2 ** 10)
     print("---Negative speed---")
     find_order(data)
