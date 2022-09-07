@@ -95,7 +95,7 @@ def WENO_indicators_m(a: float64, b: float64, c: float64, d: float64, e: float64
     return results
 
 
-@njit(float64[:](float64[:], float64[:], float64), parallel=True, fastmath=True)
+@njit(float64[:](float64[:], float64[:], float64), parallel=True, fastmath=True, nogil=True)
 def WENO_JS(ff: np.ndarray, c: np.ndarray, dx: float64):
     fh = np.zeros_like(ff)
     fx = np.zeros_like(ff)
@@ -114,7 +114,7 @@ def WENO_JS(ff: np.ndarray, c: np.ndarray, dx: float64):
     return fx
 
 
-@njit(float64[:](float64[:], float64[:], float64), parallel=True, fastmath=True)
+@njit(float64[:](float64[:], float64[:], float64), parallel=True, fastmath=True, nogil=True)
 def WENO_Z(ff: np.ndarray, c: np.ndarray, dx: float64):
     fh = np.zeros_like(ff)
     fx = np.zeros_like(ff)
@@ -133,7 +133,7 @@ def WENO_Z(ff: np.ndarray, c: np.ndarray, dx: float64):
     return fx
 
 
-@njit(float64[:](float64[:], float64[:], float64), parallel=True, fastmath=True)
+@njit(float64[:](float64[:], float64[:], float64), parallel=True, fastmath=True, nogil=True)
 def CRWENO(f: np.ndarray, c: np.ndarray, dx: float64):
     size = f.size - 6
     ghc = 3
@@ -212,7 +212,7 @@ def CRWENO(f: np.ndarray, c: np.ndarray, dx: float64):
     return fx
 
 
-@njit(float64[:](float64[:], float64[:], float64), parallel=True, fastmath=True)
+@njit(float64[:](float64[:], float64[:], float64), parallel=True, fastmath=True, nogil=True)
 def CRWENO_LD(f: np.ndarray, c: np.ndarray, dx: float64):
     size = f.size - 6
     ghc = 3

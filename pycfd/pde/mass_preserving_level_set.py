@@ -8,7 +8,7 @@ from pycfd.functions.level_set import Heaviside, Delta
 from pycfd.objects.level_set_function import find_mass_vol
 
 
-@njit(parallel=True, fastmath=True)
+@njit(parallel=True, fastmath=True, nogil=True)
 def mpls_source(f: np.ndarray, grids: np.ndarray, ghc: int32, ndim: int32, gradient: Callable, width: float64,
                 imass: float64, density_ratio: float64):
     dx, dy, dz = grids
@@ -26,7 +26,7 @@ def mpls_source(f: np.ndarray, grids: np.ndarray, ghc: int32, ndim: int32, gradi
     return eta * delta * grad
 
 
-@njit(fastmath=True, parallel=True)
+@njit(fastmath=True, parallel=True, nogil=True)
 def mpls(temproal: Callable, gradient: Callable, phi: np.ndarray, grids: np.ndarray, ghc: int32, ndim: int32,
          width: float64, imass: float64, density_ratio: float64):
     dx, dy, dz = grids

@@ -7,7 +7,7 @@ from pycfd.scheme.spatial.CCD import CCD
 from pycfd.functions.derivatives import find_fx, find_fy, find_fz
 
 
-@njit(float64[:, :, :](float64[:, :, :], float64[:], int32, int32), parallel=True, fastmath=True)
+@njit(float64[:, :, :](float64[:, :, :], float64[:], int32, int32), parallel=True, fastmath=True, nogil=True)
 def Godunov_WENO_grad(f: np.ndarray, grids: np.ndarray, ghc: int32, ndim: int32):
     assert ndim > 1
     dx, dy, dz = grids
@@ -98,7 +98,7 @@ def Godunov_WENO_grad(f: np.ndarray, grids: np.ndarray, ghc: int32, ndim: int32)
     return grad
 
 
-@njit(float64[:, :, :](float64[:, :, :], float64[:], int32, int32), parallel=True, fastmath=True)
+@njit(float64[:, :, :](float64[:, :, :], float64[:], int32, int32), parallel=True, fastmath=True, nogil=True)
 def CCD_grad(f: np.ndarray, grids: np.ndarray, ghc: int32, ndim: int32):
     dx, dy, dz = grids
     fx = find_fx(f, dx, f, CCD)

@@ -1,3 +1,4 @@
+import time
 from importlib import import_module
 from typing import Callable
 
@@ -6,18 +7,18 @@ import numpy as np
 from numba import njit, float64, int32
 
 from pycfd.boundary_conditions import periodic
-from pycfd.functions import find_fx
+from pycfd.functions.derivatives import find_fx
 from pycfd.objects import Scalar
 from pycfd.scheme.temporal import rk3
 from pycfd.utils import find_order, l2_norm
 
 
-@njit(parallel=True, fastmath=True)
+@njit(parallel=True, fastmath=True, nogil=True)
 def BurgerEq_source_1d(f: np.ndarray, grids: np.ndarray, ghc: int32, ndim: int32, c: np.ndarray, scheme: Callable):
     return - find_fx(0.5 * f ** 2, grids[0], c, scheme)
 
 
-@njit(float64[:](float64[:], float64, float64), parallel=True, fastmath=True)
+@njit(float64[:](float64[:], float64, float64), parallel=True, fastmath=True, nogil=True)
 def find_exact_solution(x: np.ndarray, t: float64, ts: float64):
     u = np.sin(2.0 * np.pi * x) / (2.0 * np.pi * ts)
     diff = u - np.sin(2.0 * np.pi * (x - u * t)) / (2.0 * np.pi * ts)
@@ -55,9 +56,11 @@ def run(N, source, bc, ghc, ts, scheme, dt, plot=False):
 
 
 if __name__ == "__main__":
-    run_scheme = getattr(import_module("scheme.spatial"),
+    run_scheme = getattr(import_module("pycfd.scheme.spatial"),
                          input('Choose scheme (CCD, UCCD, WENO_JS, WENO_Z, CRWENO, CRWENO_LD): '))
     data = {}
-    for i in range(5, 9):
-        data[2 ** i] = run(2 ** i, BurgerEq_source_1d, periodic, 3, 2.0, run_scheme, 0.1 * 1.0 / 2 ** 8)
+    for i in range(5, 11):
+        data[2 ** i] = [None, -time.time()]
+        data[2 ** i][0] = run(2 ** i, BurgerEq_source_1d, periodic, 3, 2.0, run_scheme, 0.1 * 1.0 / 2 ** 10)
+        data[2 ** i][1] += time.time()
     find_order(data)

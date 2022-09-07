@@ -2,7 +2,7 @@ import numpy as np
 from numba import njit, float64, prange
 
 
-@njit(float64[:, :, :](float64[:, :, :], float64), fastmath=True, parallel=True)
+@njit(float64[:, :, :](float64[:, :, :], float64), fastmath=True, parallel=True, nogil=True)
 def Heaviside(x, eta):
     heaviside = np.zeros_like(x)
     for i in prange(x.shape[0]):
@@ -17,12 +17,12 @@ def Heaviside(x, eta):
     return heaviside
 
 
-@njit(float64[:, :, :](float64[:, :, :], float64), fastmath=True, parallel=True)
+@njit(float64[:, :, :](float64[:, :, :], float64), fastmath=True, parallel=True, nogil=True)
 def Sign(x, eta):
     return Heaviside(x, eta) * 2.0 - 1.0
 
 
-@njit(float64[:, :, :](float64[:, :, :], float64), fastmath=True, parallel=True)
+@njit(float64[:, :, :](float64[:, :, :], float64), fastmath=True, parallel=True, nogil=True)
 def Delta(x, eta):
     delta = np.zeros_like(x)
     for i in prange(x.shape[0]):

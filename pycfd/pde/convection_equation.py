@@ -7,7 +7,7 @@ from pycfd.boundary_conditions import zero_order
 from pycfd.functions.derivatives import find_fx, find_fy, find_fz
 
 
-@njit(parallel=True, fastmath=True)
+@njit(parallel=True, fastmath=True, nogil=True)
 def pure_convection_source(f: np.ndarray, grids: np.ndarray, ghc: int32, ndim: int32, vel: np.ndarray, scheme: Callable):
     s = find_fx(f, grids[0], vel[0, :, :, :], scheme) * vel[0, :, :, :] + \
         find_fy(f, grids[1], vel[1, :, :, :], scheme) * vel[1, :, :, :]
@@ -16,7 +16,7 @@ def pure_convection_source(f: np.ndarray, grids: np.ndarray, ghc: int32, ndim: i
     return -s
 
 
-@njit(fastmath=True)
+@njit(fastmath=True, nogil=True)
 def pure_convection(temproal: Callable, scheme: Callable, phi: np.ndarray, grids: np.ndarray, ghc: int32, ndim: int32,
                     velocity: np.ndarray, dt: float64):
     return temproal(dt, phi, grids, ghc, ndim, pure_convection_source, zero_order, velocity, scheme)

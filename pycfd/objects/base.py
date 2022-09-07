@@ -2,13 +2,11 @@ import numpy as np
 from munch import Munch
 
 
+
 class Scalar:
 
     def __init__(self, _size: list[int], ghc: int, _axis_data: list[tuple[float, float]],
                  num_of_data: int = 1, no_axis=False, no_data=False):
-
-        assert len(_size) == len(_axis_data), f"{_size}, {_axis_data}"
-        assert all([x[1] > x[0] for x in _axis_data])
 
         self.ndim = len(_size)
         self.ghc = ghc
@@ -17,9 +15,9 @@ class Scalar:
         size = [x + 1 for x in _size]
         axis_data = [x for x in _axis_data]
         while len(size) < 3:
-            size += [1]
-            ghc_array += [0]
-            axis_data += [(0, 0)]
+            size.append(1)
+            ghc_array.append(0)
+            axis_data.append((0, 0))
 
         self.shape = np.array(size, dtype=int)
 

@@ -2,7 +2,7 @@ import numpy as np
 from numba import njit, prange, int32, float64
 
 
-@njit((float64[:, :, :], int32), parallel=True)
+@njit((float64[:, :, :], int32), parallel=True, nogil=True)
 def periodic_x(f: np.ndarray, ghc: int32):
     for j in prange(f.shape[1]):
         for k in prange(f.shape[2]):
@@ -11,7 +11,7 @@ def periodic_x(f: np.ndarray, ghc: int32):
                 f[f.shape[0] - ghc + i, j, k] = f[ghc + i + 1, j, k]
 
 
-@njit((float64[:, :, :], int32), parallel=True)
+@njit((float64[:, :, :], int32), parallel=True, nogil=True)
 def periodic_y(f: np.ndarray, ghc: int32):
     for i in prange(f.shape[0]):
         for k in prange(f.shape[2]):
@@ -20,7 +20,7 @@ def periodic_y(f: np.ndarray, ghc: int32):
                 f[i, f.shape[1] - ghc + j, k] = f[i, ghc + j + 1, k]
 
 
-@njit((float64[:, :, :], int32), parallel=True)
+@njit((float64[:, :, :], int32), parallel=True, nogil=True)
 def periodic_z(f: np.ndarray, ghc: int32):
     for j in prange(f.shape[1]):
         for i in prange(f.shape[0]):

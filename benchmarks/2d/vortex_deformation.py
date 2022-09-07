@@ -5,7 +5,7 @@ from pycfd.objects import Scalar, Vector
 from pycfd.objects import LevelSetFunction
 from pycfd.pde.convection_equation import pure_convection
 from pycfd.pde.mass_preserving_level_set import mpls
-from pycfd.scheme.spatial import UCCD
+from pycfd.scheme.spatial import UCCD, WENO_JS
 from pycfd.scheme.temporal import rk3, euler
 from pycfd.utils import VTKPlotter
 from pycfd.functions.gradients import CCD_grad
@@ -25,6 +25,12 @@ if __name__ == "__main__":
 
     phi.core = -np.sqrt((geo.mesh.x - 0.5) ** 2 + (geo.mesh.y - 0.75) ** 2) + 0.15
     zero_order(phi.data[0], geo.ghc, geo.ndim)
+
+    plotter.create()
+    plotter.add_scalar(phi.core, "phi")
+    plotter.add_vector(vel.core, "velocity")
+    plotter.close()
+
     phi.snap(np.product(geo.grids[:geo.ndim]))
 
     vel.x.core = np.sin(np.pi * geo.mesh.x) ** 2 * np.sin(2.0 * np.pi * geo.mesh.y) * np.cos(np.pi * t / period)
@@ -35,7 +41,7 @@ if __name__ == "__main__":
     cnt = 0
     while t < period:
 
-        phi.data[0] = pure_convection(rk3, UCCD, phi.data[0], geo.grids, geo.ghc, geo.ndim, vel.of(0), dt)
+        phi.data[0] = pure_convection(rk3, WENO_JS, phi.data[0], geo.grids, geo.ghc, geo.ndim, vel.of(0), dt)
         phi.data[0] = mpls(rk3, CCD_grad, phi.data[0], geo.grids, geo.ghc, geo.ndim, phi.interface_width, phi.mass[0],
                            phi.density_ratio)
 

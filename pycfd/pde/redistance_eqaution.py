@@ -10,7 +10,8 @@ from pycfd.utils import l2_norm
 import numpy as np
 
 
-@njit(float64[:, :, :](float64[:, :, :], float64[:], int32, int32, float64[:, :, :], float64, boolean))
+@njit(float64[:, :, :](float64[:, :, :], float64[:], int32, int32, float64[:, :, :], float64, boolean), parallel=True,
+      nogil=True)
 def redistance_source(f: np.ndarray, grids: np.ndarray, ghc: int32, ndim: int32, sign: np.ndarray, ls_width: float64,
                       init: bool):
     _lambda = np.zeros_like(f)
@@ -47,7 +48,7 @@ def redistance_source(f: np.ndarray, grids: np.ndarray, ghc: int32, ndim: int32,
     return - sign * (grad - 1.0) + _lambda * delta * grad
 
 
-@njit(parallel=True, fastmath=True)
+@njit(parallel=True, fastmath=True, nogil=True)
 def solve_redistance(temproal: Callable, phi: np.ndarray, grids: np.ndarray, ghc: int32, ndim: int32, ls_width: float64,
                      dt: float64, period: float64, init: bool):
     if init:
