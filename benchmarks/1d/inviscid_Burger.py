@@ -36,22 +36,17 @@ def run(N, source, bc, ghc, ts, scheme, dt, plot=False):
     phi = Scalar(**geo_dict, no_axis=True)
 
     phi.core = np.sin(2.0 * np.pi * geo.mesh.x) / (2.0 * np.pi * ts)
-    bc(phi.data[0], phi.ghc, phi.ndim)
+    bc(phi.data.cpu[0], phi.ghc, phi.ndim)
 
     cpu_time = -time.time()
     t = 0.0
     while t < 0.75 * ts:
         t += dt
-        phi.data[0] = rk3(dt, phi.data[0], geo.grids, phi.ghc, phi.ndim, source, bc, phi.data[0], scheme)
+        phi.data.cpu[0] = rk3(dt, phi.data.cpu[0], geo.grids, phi.ghc, phi.ndim, source, bc, phi.data.cpu[0], scheme)
 
     phi_exact = Scalar(**geo_dict, no_axis=True)
     phi_exact.core = find_exact_solution(geo.mesh.x, t, ts)
-    bc(phi_exact.data[0], phi_exact.ghc, phi_exact.ndim)
-
-    if plot:
-        fig, ax = plt.subplots()
-        ax.plot(geo.x, phi.core)
-        ax.plot(geo.x, phi_exact.core)
+    bc(phi_exact.data.cpu[0], phi_exact.ghc, phi_exact.ndim)
 
     error = l2_norm(phi_exact.core, phi.core)
     return error, cpu_time + time.time()
