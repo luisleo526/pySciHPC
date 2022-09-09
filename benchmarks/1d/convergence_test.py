@@ -11,7 +11,7 @@ from pycfd.scheme.temporal import rk3
 from pycfd.utils import find_order, l2_norm
 
 
-def run(N, source, bc, ghc, c, scheme, dt, plot=False):
+def run(N, source, bc, ghc, c, scheme, dt):
     geo_dict = dict(_size=[N], ghc=ghc, _axis_data=[(-1.0, 1.0)])
 
     geo = Scalar(**geo_dict, no_data=True)
@@ -31,9 +31,8 @@ def run(N, source, bc, ghc, c, scheme, dt, plot=False):
         solve_hyperbolic(phi, vel, geo, rk3, bc, source, dt, scheme)
 
     phi_exact = Scalar(**geo_dict)
-    # phi_exact.core = np.sin(
-    #     np.pi * (geo.mesh.x - c * (t - 2.0)) - np.sin(np.pi * (geo.mesh.x - c * (t - 2.0))) / np.pi)
-    phi_exact.core = np.sin(np.pi * (geo.mesh.x - c * (t - 2.0)))
+    # phi_exact.core = np.sin(np.pi * (geo.mesh.x - c * t) - np.sin(np.pi * (geo.mesh.x - c * t)) / np.pi)
+    phi_exact.core = np.sin(np.pi * (geo.mesh.x - c * t))
     bc(phi_exact.data.cpu[0], phi_exact.ghc, phi_exact.ndim)
 
     error = l2_norm(phi_exact.core, phi.core)
@@ -45,6 +44,6 @@ if __name__ == "__main__":
                          input('Choose scheme (CCD, UCCD, WENO_JS, WENO_Z, CRWENO, CRWENO_LD): '))
     data = {}
     for i in range(5, 10):
-        data[2 ** i] = run(2 ** i, pure_convection_source, periodic, 3, 1.0, run_scheme, 0.1 * 2.0 / 2 ** 9)
+        data[2 ** i] = run(2 ** i, pure_convection_source, periodic, 3, 1.0, run_scheme, 0.1 / 2 ** 9)
     print("---Positive speed---")
     find_order(data)

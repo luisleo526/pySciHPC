@@ -28,4 +28,4 @@ def pad(f: np.ndarray, N: int32):
 
 @njit(parallel=True, fastmath=True, nogil=True)
 def l2_norm(x: np.ndarray, y: np.ndarray):
-    return np.sqrt(np.sum((x - y) ** 2) / x.size)
+    return np.sqrt(np.sum(np.square(x - y)) / x.size)
