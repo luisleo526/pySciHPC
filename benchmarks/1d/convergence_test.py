@@ -3,12 +3,12 @@ from importlib import import_module
 
 import numpy as np
 
-from pycfd import solve_hyperbolic
-from pycfd.boundary_conditions import periodic
-from pycfd.objects import Scalar, Vector
-from pycfd.pde_source.convection_equation import pure_convection_source
-from pycfd.scheme.temporal import rk3
-from pycfd.utils import find_order, l2_norm
+from pySciHPC import solve_hyperbolic
+from pySciHPC.boundary_conditions import periodic
+from pySciHPC.objects import Scalar, Vector
+from pySciHPC.pde_source.convection_equation import pure_convection_source
+from pySciHPC.scheme.temporal import rk3
+from pySciHPC.utils import find_order, l2_norm
 
 
 def run(N, source, bc, ghc, c, scheme, dt):
@@ -40,7 +40,7 @@ def run(N, source, bc, ghc, c, scheme, dt):
 
 
 if __name__ == "__main__":
-    run_scheme = getattr(import_module("pycfd.scheme.spatial"),
+    run_scheme = getattr(import_module("pySciHPC.scheme.spatial"),
                          input('Choose scheme (CCD, UCCD, WENO_JS, WENO_Z, CRWENO, CRWENO_LD): '))
     data = {}
     for i in range(5, 10):

@@ -2,12 +2,12 @@ from typing import Callable, Union, Optional
 
 import numpy as np
 
-from pycfd.boundary_conditions.zero_order import zero_order
-from pycfd.functions.gradients import Godunov_WENO_grad
-from pycfd.functions.level_set import Delta, Sign
-from pycfd.objects.base import Scalar, Vector
-from pycfd.objects.level_set_function import LevelSetFunction
-from pycfd.utils import l2_norm
+from pySciHPC.boundary_conditions.zero_order import zero_order
+from pySciHPC.functions.gradients import Godunov_WENO_grad
+from pySciHPC.functions.level_set import Delta, Sign
+from pySciHPC.objects.base import Scalar, Vector
+from pySciHPC.objects.level_set_function import LevelSetFunction
+from pySciHPC.utils import l2_norm
 
 
 def solve_hyperbolic(f: Scalar, c: Union[Vector, np.ndarray], geo: Scalar, temporal: Callable, bc: Callable,

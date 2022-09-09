@@ -1,10 +1,10 @@
 import numpy as np
 from numba import int32, float64, njit, prange
 
-from pycfd.boundary_conditions.zero_order import zero_order_x, zero_order_y, zero_order_z, zero_order
-from pycfd.scheme.spatial.ENO import WENO_p, WENO_m, WENO_weights_JS
-from pycfd.scheme.spatial.CCD import CCD
-from pycfd.functions.derivatives import find_fx, find_fy, find_fz
+from pySciHPC.boundary_conditions.zero_order import zero_order_x, zero_order_y, zero_order_z, zero_order
+from pySciHPC.scheme.spatial.ENO import WENO_p, WENO_m, WENO_weights_JS
+from pySciHPC.scheme.spatial.CCD import CCD
+from pySciHPC.functions.derivatives import find_fx, find_fy, find_fz
 
 
 @njit(float64[:, :, :](float64[:, :, :], float64[:], int32, int32), parallel=True, fastmath=True, nogil=True)

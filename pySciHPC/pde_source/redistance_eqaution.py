@@ -1,10 +1,10 @@
 import numpy as np
 from numba import int32, boolean, float64, njit, prange
 
-from pycfd.boundary_conditions import zero_order
-from pycfd.functions.gradients import Godunov_WENO_grad
-from pycfd.functions.level_set import Delta, Sign
-from pycfd.utils import l2_norm
+from pySciHPC.boundary_conditions import zero_order
+from pySciHPC.functions.gradients import Godunov_WENO_grad
+from pySciHPC.functions.level_set import Delta, Sign
+from pySciHPC.utils import l2_norm
 
 
 @njit(float64[:, :, :](float64[:, :, :], float64[:], int32, int32, float64[:, :, :], float64, boolean), parallel=True,

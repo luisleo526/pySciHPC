@@ -1,11 +1,11 @@
 import numpy as np
 
-from pycfd import solve_hyperbolic_steady
-from pycfd.boundary_conditions import zero_order
-from pycfd.objects import Scalar, LevelSetFunction
-from pycfd.pde_source.redistance_eqaution import redistance_source, redistance_init, redistance_criterion
-from pycfd.scheme.temporal import rk3
-from pycfd.utils import VTKPlotter
+from pySciHPC import solve_hyperbolic_steady
+from pySciHPC.boundary_conditions import zero_order
+from pySciHPC.objects import Scalar, LevelSetFunction
+from pySciHPC.pde_source.redistance_eqaution import redistance_source, redistance_init, redistance_criterion
+from pySciHPC.scheme.temporal import rk3
+from pySciHPC.utils import VTKPlotter
 
 if __name__ == "__main__":
     geo_dict = dict(_size=[64, 128], ghc=3, _axis_data=[(0.0, 1.0), (0.0, 1.0)])

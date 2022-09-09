@@ -1,4 +1,4 @@
-from pycfd.utils.matrix_solver import twin_dec, twin_bks
+from pySciHPC.utils.matrix_solver import twin_dec, twin_bks
 from numba import njit, float64, int32, prange
 import numpy as np
 

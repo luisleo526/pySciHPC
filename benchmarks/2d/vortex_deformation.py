@@ -1,17 +1,17 @@
 import numpy as np
 from numba import set_num_threads
 
-from pycfd.boundary_conditions import zero_order
-from pycfd.functions.gradients import CCD_grad
-from pycfd.objects import LevelSetFunction
-from pycfd.objects import Scalar, Vector
-from pycfd.pde_source.convection_equation import pure_convection_source
-from pycfd.pde_source.mass_preserving_level_set import mpls_source, mpls_criterion
-from pycfd.scheme.spatial import WENO_JS, UCCD
-from pycfd.scheme.temporal import rk3
-from pycfd.utils import VTKPlotter
-from pycfd.utils import l2_norm
-from pycfd import solve_hyperbolic, solve_hyperbolic_steady
+from pySciHPC.boundary_conditions import zero_order
+from pySciHPC.functions.gradients import CCD_grad
+from pySciHPC.objects import LevelSetFunction
+from pySciHPC.objects import Scalar, Vector
+from pySciHPC.pde_source.convection_equation import pure_convection_source
+from pySciHPC.pde_source.mass_preserving_level_set import mpls_source, mpls_criterion
+from pySciHPC.scheme.spatial import WENO_JS, UCCD
+from pySciHPC.scheme.temporal import rk3
+from pySciHPC.utils import VTKPlotter
+from pySciHPC.utils import l2_norm
+from pySciHPC import solve_hyperbolic, solve_hyperbolic_steady
 
 if __name__ == "__main__":
 

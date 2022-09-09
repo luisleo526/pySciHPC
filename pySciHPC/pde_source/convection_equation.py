@@ -3,8 +3,8 @@ from typing import Callable
 import numpy as np
 from numba import int32, float64, njit
 
-from pycfd.boundary_conditions import zero_order
-from pycfd.functions.derivatives import find_fx, find_fy, find_fz
+from pySciHPC.boundary_conditions import zero_order
+from pySciHPC.functions.derivatives import find_fx, find_fy, find_fz
 
 
 @njit(parallel=True, fastmath=True, nogil=True)

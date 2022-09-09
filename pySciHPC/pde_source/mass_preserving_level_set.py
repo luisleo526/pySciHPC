@@ -3,10 +3,10 @@ from typing import Callable
 import numpy as np
 from numba import int32, float64, njit, prange
 
-from pycfd.boundary_conditions import zero_order
-from pycfd.functions.level_set import Heaviside, Delta
-from pycfd.objects.level_set_function import find_mass_vol
-from pycfd.utils import l2_norm
+from pySciHPC.boundary_conditions import zero_order
+from pySciHPC.functions.level_set import Heaviside, Delta
+from pySciHPC.objects.level_set_function import find_mass_vol
+from pySciHPC.utils import l2_norm
 
 
 @njit(parallel=True, fastmath=True, nogil=True)

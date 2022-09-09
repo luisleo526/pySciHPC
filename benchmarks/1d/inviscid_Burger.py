@@ -6,13 +6,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 from numba import njit, float64, int32
 
-from pycfd.boundary_conditions import periodic
-from pycfd.functions.derivatives import find_fx
-from pycfd.objects import Scalar
-from pycfd.scheme.temporal import rk3
-from pycfd.utils import find_order, l2_norm
-from pycfd import solve_hyperbolic
-from pycfd.pde_source.convection_equation import pure_convection_source
+from pySciHPC.boundary_conditions import periodic
+from pySciHPC.functions.derivatives import find_fx
+from pySciHPC.objects import Scalar
+from pySciHPC.scheme.temporal import rk3
+from pySciHPC.utils import find_order, l2_norm
+from pySciHPC import solve_hyperbolic
+from pySciHPC.pde_source.convection_equation import pure_convection_source
 
 
 @njit(parallel=True, fastmath=True, nogil=True)
@@ -55,7 +55,7 @@ def run(N, source, bc, ghc, ts, scheme, dt, plot=False):
 
 
 if __name__ == "__main__":
-    run_scheme = getattr(import_module("pycfd.scheme.spatial"),
+    run_scheme = getattr(import_module("pySciHPC.scheme.spatial"),
                          input('Choose scheme (CCD, UCCD, WENO_JS, WENO_Z, CRWENO, CRWENO_LD): '))
     data = {}
     for i in range(5, 11):
