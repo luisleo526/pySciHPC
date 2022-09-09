@@ -17,7 +17,7 @@ if __name__ == "__main__":
 
     set_num_threads(16)
 
-    geo_dict = dict(_size=[32, 32], ghc=3, _axis_data=[(0.0, 1.0), (0.0, 1.0)], num_of_data=1)
+    geo_dict = dict(_size=[32, 64], ghc=3, _axis_data=[(0.0, 1.0), (0.0, 1.0)], num_of_data=1)
     geo = Scalar(**geo_dict, no_data=True)
     ls_dict = dict(interface_width=1.5 * geo.dx, density_ratio=1.0)
     phi = LevelSetFunction(**geo_dict, no_axis=True, **ls_dict)

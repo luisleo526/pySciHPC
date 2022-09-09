@@ -47,7 +47,7 @@ class Scalar:
         if not no_data:
             ghc_array = np.array(ghc_array, dtype=int)
             self.data = CuArray(
-                np.stack((np.zeros(ghc_array * 2 + self.shape, dtype=np.float64) for _ in range(num_of_data))),
+                np.stack([np.zeros(ghc_array * 2 + self.shape, dtype=np.float64) for _ in range(num_of_data)]),
                 use_cuda)
 
     @property
@@ -121,20 +121,25 @@ class Vector:
 
     def of(self, i):
         if self.ndim == 1:
-            return np.stack((self.x.data.cpu[i]))
+            return np.stack([self.x.data.cpu[i]])
         elif self.ndim == 2:
-            return np.stack((self.x.data.cpu[i], self.y.data.cpu[i]))
+            return np.stack([self.x.data.cpu[i], self.y.data.cpu[i]])
         else:
-            return np.stack((self.x.data.cpu[i], self.y.data.cpu[i], self.z.data.cpu[i]))
+            return np.stack([self.x.data.cpu[i], self.y.data.cpu[i], self.z.data.cpu[i]])
 
     @property
     def core(self):
         if self.ndim == 1:
             return self.x.core
         elif self.ndim == 2:
-            return np.stack((self.x.core, self.y.core))
+            x = np.ascontiguousarray(self.x.core)
+            y = np.ascontiguousarray(self.y.core)
+            return np.stack([x, y])
         else:
-            return np.stack((self.x.core, self.y.core, self.z.core))
+            x = np.ascontiguousarray(self.x.core)
+            y = np.ascontiguousarray(self.y.core)
+            z = np.ascontiguousarray(self.z.core)
+            return np.stack([x, y, z])
 
     def to_device(self):
         self.x.to_device()
