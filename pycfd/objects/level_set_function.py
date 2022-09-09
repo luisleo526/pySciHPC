@@ -26,8 +26,8 @@ def find_mass_vol(x, eta, density, dv, ndim, ghc):
 
 class LevelSetFunction(Scalar):
     def __init__(self, _size: list[int], ghc: int, _axis_data: list[tuple[float, float]], num_of_data: int = 1,
-                 no_axis=False, no_data=False, interface_width: float = 0.0, density_ratio: float = 1.0):
-        super().__init__(_size, ghc, _axis_data, num_of_data, no_axis, no_data)
+                 no_axis=False, no_data=False, use_cuda=False, interface_width: float = 0.0, density_ratio: float = 1.0):
+        super().__init__(_size, ghc, _axis_data, num_of_data, no_axis, no_data, use_cuda)
 
         self.interface_width = interface_width
         self.density_ratio = density_ratio
@@ -35,7 +35,7 @@ class LevelSetFunction(Scalar):
         self.mass = []
 
     def snap(self, dv):
-        tmp = find_mass_vol(self.data[0], self.interface_width, self.density_ratio, dv, self.ndim, self.ghc)
+        tmp = find_mass_vol(self.data.cpu[0], self.interface_width, self.density_ratio, dv, self.ndim, self.ghc)
         self.vol.append(tmp[0])
         self.mass.append(tmp[1])
 

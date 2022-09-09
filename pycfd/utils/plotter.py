@@ -12,7 +12,7 @@ class VTKPlotter:
         Path(f"./{project_name}_VTK").mkdir(parents=True, exist_ok=True)
         self.project_name = project_name
         self.directory = f"./{project_name}_VTK"
-        self.axis = [geometry.x, geometry.y]
+        self.axis = [geometry.x.cpu, geometry.y.cpu]
         if geometry.ndim > 2:
             self.axis.append(geometry.z)
         self.ndim = geometry.ndim

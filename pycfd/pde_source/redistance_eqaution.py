@@ -1,13 +1,10 @@
-from typing import Callable
-
+import numpy as np
 from numba import int32, boolean, float64, njit, prange
 
 from pycfd.boundary_conditions import zero_order
 from pycfd.functions.gradients import Godunov_WENO_grad
 from pycfd.functions.level_set import Delta, Sign
 from pycfd.utils import l2_norm
-
-import numpy as np
 
 
 @njit(float64[:, :, :](float64[:, :, :], float64[:], int32, int32, float64[:, :, :], float64, boolean), parallel=True,
@@ -48,25 +45,19 @@ def redistance_source(f: np.ndarray, grids: np.ndarray, ghc: int32, ndim: int32,
     return - sign * (grad - 1.0) + _lambda * delta * grad
 
 
-@njit(parallel=True, fastmath=True, nogil=True)
-def solve_redistance(temproal: Callable, phi: np.ndarray, grids: np.ndarray, ghc: int32, ndim: int32, ls_width: float64,
-                     dt: float64, period: float64, init: bool):
+@njit(float64[:, :, :, :](float64[:, :, :], float64[:], int32, int32, float64[:, :, :], float64, boolean),
+      parallel=True, nogil=True, fastmath=True)
+def redistance_init(f: np.ndarray, grids: np.ndarray, ghc: int32, ndim: int32, sign: np.ndarray, ls_width: float64,
+                    init: bool):
     if init:
-        phi = phi / np.amax(Godunov_WENO_grad(phi, grids, ghc, ndim))
+        f = f / np.amax(Godunov_WENO_grad(f, grids, ghc, ndim))
 
-    sign0 = Sign(phi, ls_width)
+    sign = Sign(f, ls_width)
 
-    t = 0
-    cnt = 0
-    while True:
-        cnt += 1
-        t += dt
-        phi_tmp = np.copy(phi)
-        phi = temproal(dt, phi, grids, ghc, ndim, redistance_source, zero_order, sign0, ls_width, init)
-        error = l2_norm(phi_tmp, phi)
-        if cnt % 100 == 0:
-            print(cnt, error)
-        if error < 1.0e-14 or t > period:
-            break
+    return np.stack((f, sign))
 
-    return phi
+
+@njit(nogil=True, fastmath=True)
+def redistance_criterion(f: np.ndarray, fold: np.ndarray, t: float64, tol: float64, period: float64, grids: np.ndarray,
+                         ghc: int32, ndim: int32, *args):
+    return t > period or l2_norm(f, fold) < tol

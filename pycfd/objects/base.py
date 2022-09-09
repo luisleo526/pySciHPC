@@ -12,14 +12,6 @@ class CuArray:
         else:
             self.gpu = None
 
-    def to_host(self):
-        if self.use_cuda:
-            self.cpu = self.gpu.copy_to_host()
-
-    def to_device(self):
-        if self.use_cuda:
-            self.gpu = cuda.to_device(self.cpu)
-
 
 class Scalar:
 
@@ -55,7 +47,7 @@ class Scalar:
         if not no_data:
             ghc_array = np.array(ghc_array, dtype=int)
             self.data = CuArray(
-                np.stack([np.zeros(ghc_array * 2 + self.shape, dtype=np.float64) for _ in range(num_of_data)]),
+                np.stack((np.zeros(ghc_array * 2 + self.shape, dtype=np.float64) for _ in range(num_of_data))),
                 use_cuda)
 
     @property
@@ -103,6 +95,14 @@ class Scalar:
             geo.z = z
             return geo
 
+    def to_host(self):
+        if self.use_cuda:
+            self.data.cpu = self.data.gpu.copy_to_host()
+
+    def to_device(self):
+        if self.use_cuda:
+            self.data.gpu = cuda.to_device(self.data.cpu)
+
 
 class Vector:
 
@@ -114,33 +114,38 @@ class Vector:
         self.ndim = self.x.ndim
         self.shape = self.x.shape
 
-        self.y = Scalar(_size, ghc, _axis_data, num_of_data, no_axis=True, no_data=False, use_cuda=use_cuda)
+        if self.ndim > 1:
+            self.y = Scalar(_size, ghc, _axis_data, num_of_data, no_axis=True, no_data=False, use_cuda=use_cuda)
         if self.ndim > 2:
             self.z = Scalar(_size, ghc, _axis_data, num_of_data, no_axis=True, no_data=False, use_cuda=use_cuda)
 
-        assert self.ndim > 1
-
     def of(self, i):
-        if self.ndim == 2:
-            return np.stack([self.x.data.cpu[i], self.y.data.cpu[i]])
+        if self.ndim == 1:
+            return np.stack((self.x.data.cpu[i]))
+        elif self.ndim == 2:
+            return np.stack((self.x.data.cpu[i], self.y.data.cpu[i]))
         else:
-            return np.stack([self.x.data.cpu[i], self.y.data.cpu[i], self.z.data.cpu[i]])
+            return np.stack((self.x.data.cpu[i], self.y.data.cpu[i], self.z.data.cpu[i]))
 
     @property
     def core(self):
-        if self.ndim == 2:
-            return np.stack([self.x.core, self.y.core])
+        if self.ndim == 1:
+            return self.x.core
+        elif self.ndim == 2:
+            return np.stack((self.x.core, self.y.core))
         else:
-            return np.stack([self.x.core, self.y.core, self.z.core])
+            return np.stack((self.x.core, self.y.core, self.z.core))
 
     def to_device(self):
-        self.x.data.to_device()
-        self.y.data.to_device()
+        self.x.to_device()
+        if self.ndim > 1:
+            self.y.to_device()
         if self.ndim > 2:
-            self.z.data.to_device()
+            self.z.to_device()
 
     def to_host(self):
-        self.x.data.to_host()
-        self.y.data.to_host()
+        self.x.to_host()
+        if self.ndim > 1:
+            self.y.to_host()
         if self.ndim > 2:
-            self.z.data.to_host()
+            self.z.to_host()

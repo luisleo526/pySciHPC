@@ -1,19 +1,14 @@
-from importlib import import_module
-from typing import Callable
 import time
-import numpy as np
-from numba import njit, int32
+from importlib import import_module
 
+import numpy as np
+
+from pycfd import solve_hyperbolic
 from pycfd.boundary_conditions import periodic
-from pycfd.functions.derivatives import find_fx
-from pycfd.objects import Scalar
+from pycfd.objects import Scalar, Vector
+from pycfd.pde_source.convection_equation import pure_convection_source
 from pycfd.scheme.temporal import rk3
 from pycfd.utils import find_order, l2_norm
-
-
-@njit(parallel=True, fastmath=True, nogil=True)
-def convection_source_1d(f: np.ndarray, grids: np.ndarray, ghc: int32, ndim: int32, c: np.ndarray, scheme: Callable):
-    return - find_fx(f, grids[0], c, scheme) * c
 
 
 def run(N, source, bc, ghc, c, scheme, dt, plot=False):
@@ -26,13 +21,14 @@ def run(N, source, bc, ghc, c, scheme, dt, plot=False):
     phi.core = np.sin(np.pi * geo.mesh.x)
     bc(phi.data.cpu[0], phi.ghc, phi.ndim)
 
-    c_array = np.ones_like(phi.data.cpu[0]) * c
+    vel = Vector(**geo_dict)
+    vel.x.data.cpu[0] = np.ones_like(phi.data.cpu[0]) * c
 
     t = 0.0
     cpu_time = -time.time()
     while t < 2.0:
         t += dt
-        phi.data.cpu[0] = rk3(dt, phi.data.cpu[0], geo.grids, phi.ghc, phi.ndim, source, bc, c_array, scheme)
+        solve_hyperbolic(phi, vel, geo, rk3, bc, source, dt, scheme)
 
     phi_exact = Scalar(**geo_dict)
     # phi_exact.core = np.sin(
@@ -49,11 +45,6 @@ if __name__ == "__main__":
                          input('Choose scheme (CCD, UCCD, WENO_JS, WENO_Z, CRWENO, CRWENO_LD): '))
     data = {}
     for i in range(5, 10):
-        data[2 ** i] = run(2 ** i, convection_source_1d, periodic, 3, 1.0, run_scheme, 0.01 * 2.0 / 2 ** 9)
+        data[2 ** i] = run(2 ** i, pure_convection_source, periodic, 3, 1.0, run_scheme, 0.1 * 2.0 / 2 ** 9)
     print("---Positive speed---")
     find_order(data)
-    # data = {}
-    # for i in range(5, 10):
-    #     data[2 ** i] = run(2 ** i, convection_source_1d, periodic, 3, -1.0, run_scheme, 0.01 * 2.0 / 2 ** 9)
-    # print("---Negative speed---")
-    # find_order(data)

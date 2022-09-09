@@ -11,6 +11,8 @@ from pycfd.functions.derivatives import find_fx
 from pycfd.objects import Scalar
 from pycfd.scheme.temporal import rk3
 from pycfd.utils import find_order, l2_norm
+from pycfd import solve_hyperbolic
+from pycfd.pde_source.convection_equation import pure_convection_source
 
 
 @njit(parallel=True, fastmath=True, nogil=True)
@@ -42,7 +44,7 @@ def run(N, source, bc, ghc, ts, scheme, dt, plot=False):
     t = 0.0
     while t < 0.75 * ts:
         t += dt
-        phi.data.cpu[0] = rk3(dt, phi.data.cpu[0], geo.grids, phi.ghc, phi.ndim, source, bc, phi.data.cpu[0], scheme)
+        solve_hyperbolic(phi, phi.data.cpu[0], geo, rk3, bc, source, dt, scheme)
 
     phi_exact = Scalar(**geo_dict, no_axis=True)
     phi_exact.core = find_exact_solution(geo.mesh.x, t, ts)
