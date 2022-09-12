@@ -1,7 +1,8 @@
 from pySciHPC.objects.sparse_matrix import SparseMatrix
 from numba import cuda
 import cupy as cp
-from cupyx.scipy.sparse.linalg import spsolve
+import numpy as np
+from cupyx.scipy.sparse.linalg import spsolve, cg
 
 
 def sparse_matrix_bc(N: int, dx: float):
@@ -121,18 +122,54 @@ def retrieve_from_c(fx, fxu, fxd, c):
             fx[i] = fxu[i]
 
 
-def cuda_UCCD(f: cp.ndarray, c: cp.ndarray, dx: float, blockdim: int, threaddim: int):
+@cuda.jit
+def find_guess_solution_first(guess, f, dx):
+    i = cuda.grid(1)
+    if i > 0 and i < f.shape[0] - 1:
+        guess[i] = (f[i + 1] - f[i - 1]) / (2.0 * dx[i])
+    elif i == 0:
+        guess[i] = (f[i + 1] - f[i]) / dx[i]
+    else:
+        guess[i] = (f[i] - f[i - 1]) / dx[i]
+
+
+@cuda.jit
+def find_guess_solution_second(guess, f, dx):
+    i = cuda.grid(1)
+    if i > 0 and i < f.shape[0] - 1:
+        guess[i] = (f[i + 1] - 2.0 * f[i] + f[i - 1]) / dx[i] ** 2
+    elif i == 0:
+        guess[i] = (f[i + 2] - 2.0 * f[i + 1] + f[i]) / dx[i] ** 2
+    else:
+        guess[i] = (f[i] - 2.0 * f[i - 1] + f[i - 2]) / dx[i] ** 2
+
+
+def cuda_UCCD(f: cp.ndarray, c: cp.ndarray, dx: float, blockdim: int, threaddim: int, tol=1e-5):
     N = f.shape[0]
+    dxs = cp.ones_like(f) * dx
+
     upwind, downwind = sparse_matrix(N, dx)
     su, sd = cuda_UCCD_src(f, dx, blockdim, threaddim)
+
     fx = cp.zeros_like(f)
-    solu = spsolve(upwind, su)
-    sold = spsolve(downwind, sd)
+    fxx = cp.zeros_like(f)
+
+    find_guess_solution_first[blockdim, threaddim](fx, f, dxs)
+    find_guess_solution_second[blockdim, threaddim](fxx, f, dxs)
+
+    x0 = cp.concatenate((fx, fxx))
+
+    # solu = spsolve(upwind, su)
+    # sold = spsolve(downwind, sd)
+
+    solu = cg(upwind, su, x0, tol)[0]
+    sold = cg(downwind, sd, x0, tol)[0]
+
     fxu, fxxu = solu[:N], solu[N:]
     fxd, fxxd = sold[:N], sold[N:]
 
     retrieve_from_c[blockdim, threaddim](fx, fxu, fxd, c)
 
-    del upwind, downwind, su, sd, solu, sold, fxu, fxxu, fxd, fxxd
+    del upwind, downwind, su, sd, solu, sold, fxu, fxxu, fxd, fxxd, x0, dxs
 
     return fx

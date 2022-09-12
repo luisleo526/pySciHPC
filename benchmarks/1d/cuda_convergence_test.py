@@ -32,7 +32,7 @@ def run(N, source, bc, ghc, c, scheme, dt):
     cpu_time = -time.time()
     while t < 2.0:
         t += dt
-        solve_hyperbolic(phi, vel, geo, cuda_rk3, bc, source, dt, scheme)
+        solve_hyperbolic(phi, vel, geo, cuda_rk3, bc, source, dt, scheme, 1e-5)
 
     phi.to_host()
     error = l2_norm(np.sin(np.pi * (geo.mesh.x - c * t)), phi.core)
@@ -45,9 +45,9 @@ if __name__ == "__main__":
     config.THREADING_LAYER = 'threadsafe'
 
     data = {}
-    for i in range(5, 10):
+    for i in range(5, 8):
         N = 2 ** i
-        data[N] = run(N, cuda_pure_convection_source, cuda_periodic, 3, 1.0, cuda_UCCD, 0.1 / 2 ** 9)
+        data[N] = run(N, cuda_pure_convection_source, cuda_periodic, 3, 1.0, cuda_UCCD, 0.1 / 2 ** 7)
         print(N, data[N])
     print("---Positive speed---")
     find_order(data)
