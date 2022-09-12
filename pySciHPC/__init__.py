@@ -18,6 +18,9 @@ def solve_hyperbolic(f: Scalar, c: Union[Vector, np.ndarray], geo: Scalar, tempo
         else:
             vel = c
         f.data.cpu[0] = temporal(dt, f.data.cpu[0], geo.grids, geo.ghc, geo.ndim, source, bc, vel, *args)
+    else:
+        assert type(c) is Vector
+        temporal(dt, f, geo, c, source, bc, *args)
 
 
 def solve_hyperbolic_steady(f: Scalar, c: Union[Vector, np.ndarray], geo: Scalar, temporal: Callable, bc: Callable,

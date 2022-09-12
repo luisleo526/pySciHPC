@@ -1,6 +1,7 @@
 import numpy as np
+import cupy as cp
 from munch import Munch
-from numba import cuda
+from math import ceil
 
 
 class CuArray:
@@ -8,7 +9,7 @@ class CuArray:
         self.cpu = np.copy(data)
         self.use_cuda = use_cuda
         if use_cuda:
-            self.gpu = cuda.to_device(self.cpu)
+            self.gpu = cp.asarray(self.cpu)
         else:
             self.gpu = None
 
@@ -16,7 +17,7 @@ class CuArray:
 class Scalar:
 
     def __init__(self, _size: list[int], ghc: int, _axis_data: list[tuple[float, float]],
-                 num_of_data: int = 1, no_axis=False, no_data=False, use_cuda=False):
+                 num_of_data: int = 1, no_axis=False, no_data=False, use_cuda=False, threadsperblock=16):
 
         self.use_cuda = use_cuda
         self.ndim = len(_size)
@@ -44,11 +45,22 @@ class Scalar:
             self.dz = self.z.cpu[1] - self.z.cpu[0]
             self.grids = np.array([self.dx, self.dy, self.dz], dtype='float64')
 
+        array_shape = np.array(ghc_array, dtype=int) * 2 + self.shape
         if not no_data:
-            ghc_array = np.array(ghc_array, dtype=int)
             self.data = CuArray(
-                np.stack([np.zeros(ghc_array * 2 + self.shape, dtype=np.float64) for _ in range(num_of_data)]),
-                use_cuda)
+                np.stack([np.zeros(array_shape, dtype=np.float64) for _ in range(num_of_data)]), use_cuda)
+
+        self.threadsperblock = (threadsperblock, threadsperblock, threadsperblock)
+        self.blockspergrid = tuple([int(ceil(array_shape[i] / self.threadsperblock[i])) for i in range(3)])
+
+        self.threadsperblock_ij = (self.threadsperblock[0], self.threadsperblock[1])
+        self.blockspergrid_ij = (self.blockspergrid[0], self.blockspergrid[1])
+
+        self.threadsperblock_ik = (self.threadsperblock[0], self.threadsperblock[2])
+        self.blockspergrid_ik = (self.blockspergrid[0], self.blockspergrid[2])
+
+        self.threadsperblock_jk = (self.threadsperblock[1], self.threadsperblock[2])
+        self.blockspergrid_jk = (self.blockspergrid[1], self.blockspergrid[2])
 
     @property
     def core(self):
@@ -97,27 +109,31 @@ class Scalar:
 
     def to_host(self):
         if self.use_cuda:
-            self.data.cpu = self.data.gpu.copy_to_host()
+            self.data.cpu = self.data.gpu.get()
 
     def to_device(self):
         if self.use_cuda:
-            self.data.gpu = cuda.to_device(self.data.cpu)
+            del self.data.gpu
+            self.data.gpu = cp.array(self.data.cpu)
 
 
 class Vector:
 
     def __init__(self, _size: list[int], ghc: int, _axis_data: list[tuple[float, float]],
-                 num_of_data: int = 1, use_cuda=False):
-        self.x = Scalar(_size, ghc, _axis_data, num_of_data, no_axis=True, no_data=False, use_cuda=use_cuda)
+                 num_of_data: int = 1, use_cuda=False, threadsperblock=16):
+        self.x = Scalar(_size, ghc, _axis_data, num_of_data, no_axis=True, no_data=False, use_cuda=use_cuda,
+                        threadsperblock=threadsperblock)
 
         self.ghc = self.x.ghc
         self.ndim = self.x.ndim
         self.shape = self.x.shape
 
         if self.ndim > 1:
-            self.y = Scalar(_size, ghc, _axis_data, num_of_data, no_axis=True, no_data=False, use_cuda=use_cuda)
+            self.y = Scalar(_size, ghc, _axis_data, num_of_data, no_axis=True, no_data=False, use_cuda=use_cuda,
+                            threadsperblock=threadsperblock)
         if self.ndim > 2:
-            self.z = Scalar(_size, ghc, _axis_data, num_of_data, no_axis=True, no_data=False, use_cuda=use_cuda)
+            self.z = Scalar(_size, ghc, _axis_data, num_of_data, no_axis=True, no_data=False, use_cuda=use_cuda,
+                            threadsperblock=threadsperblock)
 
     def of(self, i):
         if self.ndim == 1:

@@ -1,10 +1,12 @@
 from typing import Callable
 
 import numpy as np
+import cupy as cp
 from numba import int32, float64, njit
 
-from pySciHPC.boundary_conditions import zero_order
 from pySciHPC.functions.derivatives import find_fx, find_fy, find_fz
+from pySciHPC.functions.derivatives import cuda_find_fx, cuda_find_fy, cuda_find_fz
+from pySciHPC.objects.base import Scalar, Vector
 
 
 @njit(parallel=True, fastmath=True, nogil=True)
@@ -18,7 +20,12 @@ def pure_convection_source(f: np.ndarray, grids: np.ndarray, ghc: int32, ndim: i
     return -s
 
 
-@njit(fastmath=True, nogil=True)
-def pure_convection(temproal: Callable, scheme: Callable, phi: np.ndarray, grids: np.ndarray, ghc: int32, ndim: int32,
-                    velocity: np.ndarray, dt: float64):
-    return temproal(dt, phi, grids, ghc, ndim, pure_convection_source, zero_order, velocity, scheme)
+def cuda_pure_convection_source(f: Scalar, geo: Scalar, vel: Vector, scheme: Callable):
+    f.to_host()
+    vel.to_host()
+    s = - cuda_find_fx(f, geo, vel, scheme) * vel.x.data.gpu[0]
+    if geo.ndim > 1:
+        s -= cuda_find_fy(f, geo, vel, scheme) * vel.y.data.gpu[0]
+    if geo.ndim > 2:
+        s -= cuda_find_fz(f, geo, vel, scheme) * vel.z.data.gpu[0]
+    return s

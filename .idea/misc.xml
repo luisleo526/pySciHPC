@@ -1,4 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.9" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.10 (pycfd)" project-jdk-type="Python SDK" />
+  <component name="UnattendedHostPersistenceState">
+    <option name="openedFilesInfos">
+      <list>
+        <OpenedFileInfo>
+          <option name="caretOffset" value="1380" />
+          <option name="fileUrl" value="file://$PROJECT_DIR$/benchmarks/1d/cuda_convergence_test.py" />
+        </OpenedFileInfo>
+        <OpenedFileInfo>
+          <option name="caretOffset" value="357" />
+          <option name="fileUrl" value="file://$PROJECT_DIR$/pySciHPC/pde_source/convection_equation.py" />
+        </OpenedFileInfo>
+        <OpenedFileInfo>
+          <option name="caretOffset" value="4273" />
+          <option name="fileUrl" value="file://$PROJECT_DIR$/pySciHPC/objects/base.py" />
+        </OpenedFileInfo>
+        <OpenedFileInfo>
+          <option name="caretOffset" value="0" />
+          <option name="fileUrl" value="file://$PROJECT_DIR$/pySciHPC/functions/derivatives.py" />
+        </OpenedFileInfo>
+        <OpenedFileInfo>
+          <option name="caretOffset" value="1377" />
+          <option name="fileUrl" value="file://$PROJECT_DIR$/pySciHPC/scheme/temporal/Runge_Kutta.py" />
+        </OpenedFileInfo>
+      </list>
+    </option>
+  </component>
 </project>
