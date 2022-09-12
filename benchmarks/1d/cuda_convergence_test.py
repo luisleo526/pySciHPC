@@ -9,6 +9,7 @@ from pySciHPC.objects import Scalar, Vector
 from pySciHPC.pde_source.convection_equation import cuda_pure_convection_source
 from pySciHPC.scheme.temporal import cuda_rk3
 from pySciHPC.utils import find_order, l2_norm
+
 from numba import config
 
 

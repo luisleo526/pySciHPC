@@ -79,3 +79,7 @@ def cuda_periodic(f: Scalar, geo: Scalar):
     if geo.ndim > 2:
         cuda_periodic_z[geo.blockspergrid_ij, geo.threadsperblock_ij](f.data.gpu[0], ghc_array)
     del ghc_array
+
+    # f.to_host()
+    # periodic(f.data.cpu[0], geo.ghc, geo.ndim)
+    # f.to_device()
