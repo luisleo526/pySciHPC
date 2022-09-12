@@ -7,9 +7,9 @@ from numba.typed import List
 
 class CCDMatrix:
 
-    def __init__(self, shape: np.shape, grids: np.ndarray, use_cuda: bool):
+    def __init__(self, shape: np.shape, grids: np.ndarray, use_cuda: bool = False):
         self.matrix = List()
-        for i in range(3):
+        for i in range(grids.size):
             if grids[i] > 0:
                 m = CCD_sparse_matrix(shape[i], grids[i])
                 im = inv(m.to_numpy())
@@ -18,15 +18,15 @@ class CCDMatrix:
                 else:
                     im = im.toarray()
             else:
-                im = 0.0
+                im = np.zeros((2, 2), dtype='float64')
             self.matrix.append(im)
 
 
 class UCCDMatrix:
 
-    def __init__(self, shape: np.shape, grids: np.ndarray, use_cuda: bool):
+    def __init__(self, shape: np.shape, grids: np.ndarray, use_cuda: bool = False):
         self.matrix = List()
-        for i in range(3):
+        for i in range(grids.size):
             if grids[i] > 0:
                 mu, md = UCCD_sparse_matrix(shape[i], grids[i])
                 imu = inv(mu.to_numpy())
