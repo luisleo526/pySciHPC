@@ -1,6 +1,6 @@
 import numpy as np
 
-from numba import njit, float64
+from numba import njit, float64, prange
 
 
 @njit(float64[:](float64[:], float64[:], float64[:], float64[:]))
@@ -37,13 +37,13 @@ def twin_dec(a: np.ndarray, b: np.ndarray, aa: np.ndarray, bb: np.ndarray):
 
     a[0, 0] = 0.0
     aa[0, 0] = 0.0
-    a[2, N-1] = 0.0
-    aa[2, N-1] = 0.0
+    a[2, N - 1] = 0.0
+    aa[2, N - 1] = 0.0
 
     b[0, 0] = 0.0
     bb[0, 0] = 0.0
-    b[2, N-1] = 0.0
-    bb[2, N-1] = 0.0
+    b[2, N - 1] = 0.0
+    bb[2, N - 1] = 0.0
 
     for i in range(1, N):
         den = a[1, i - 1] * bb[1, i - 1] - aa[1, i - 1] * b[1, i - 1]
@@ -77,16 +77,16 @@ def twin_bks(a: np.ndarray, b: np.ndarray, aa: np.ndarray, bb: np.ndarray, s: np
         s[i] = s[i] - (a[0, i] * s[i - 1] + b[0, i] * ss[i - 1])
         ss[i] = ss[i] - (aa[0, i] * s[i - 1] + bb[0, i] * ss[i - 1])
 
-    den = a[1, N-1] * bb[1, N-1] - aa[1, N-1] * b[1, N-1]
-    sols = - (b[1, N-1] * ss[N-1] - bb[1, N-1] * s[N-1]) / den
-    solss = (a[1, N-1] * ss[N-1] - aa[1, N-1] * s[N-1]) / den
+    den = a[1, N - 1] * bb[1, N - 1] - aa[1, N - 1] * b[1, N - 1]
+    sols = - (b[1, N - 1] * ss[N - 1] - bb[1, N - 1] * s[N - 1]) / den
+    solss = (a[1, N - 1] * ss[N - 1] - aa[1, N - 1] * s[N - 1]) / den
 
-    s[N-1] = sols
-    ss[N-1] = solss
+    s[N - 1] = sols
+    ss[N - 1] = solss
 
     for i in range(N - 2, -1, -1):
-        s[i] = s[i] - (a[2, i] * s[i+1] + b[2, i] * ss[i+1])
-        ss[i] = ss[i] - (aa[2, i] * s[i+1] + bb[2, i] * ss[i+1])
+        s[i] = s[i] - (a[2, i] * s[i + 1] + b[2, i] * ss[i + 1])
+        ss[i] = ss[i] - (aa[2, i] * s[i + 1] + bb[2, i] * ss[i + 1])
 
         den = a[1, i] * bb[1, i] - aa[1, i] * b[1, i]
         sols = - (b[1, i] * ss[i] - bb[1, i] * s[i]) / den
@@ -96,3 +96,13 @@ def twin_bks(a: np.ndarray, b: np.ndarray, aa: np.ndarray, bb: np.ndarray, s: np
         ss[i] = solss
 
     return np.stack((s, ss))
+
+
+@njit(parallel=True)
+def mat_mult(A, B):
+    assert A.shape[1] == B.shape[0]
+    res = np.zeros(A.shape[0], dtype='float64')
+    for i in prange(A.shape[0]):
+        for j in range(A.shape[1]):
+                res[i] += A[i, j] * B[j]
+    return res

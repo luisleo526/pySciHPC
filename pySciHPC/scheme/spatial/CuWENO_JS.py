@@ -167,7 +167,7 @@ def cuda_WENO_JS(f: cp.ndarray, c: cp.ndarray, dx: float, blockdim: int, threadd
     return fx
 
 
-def cuda_WENO_Z(f: cp.ndarray, c: cp.ndarray, dx: float, blockdim: int, threaddim: int):
+def cuda_WENO_Z(f: cp.ndarray, c: cp.ndarray, dx: float, blockdim: int, threaddim: int, *args):
     fp = cp.zeros_like(f)
     fm = cp.zeros_like(f)
     fh = cp.zeros_like(f)

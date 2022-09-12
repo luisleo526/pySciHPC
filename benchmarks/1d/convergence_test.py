@@ -8,7 +8,9 @@ from pySciHPC.boundary_conditions import periodic
 from pySciHPC.objects import Scalar, Vector
 from pySciHPC.pde_source.convection_equation import pure_convection_source
 from pySciHPC.scheme.temporal import rk3
+from pySciHPC.scheme.spatial import UCCD
 from pySciHPC.utils import find_order, l2_norm
+from pySciHPC.objects.coeffs import UCCDMatrix
 from numba import config
 
 
@@ -17,6 +19,7 @@ def run(N, source, bc, ghc, c, scheme, dt):
 
     geo = Scalar(**geo_dict, no_data=True)
     phi = Scalar(**geo_dict, no_axis=True)
+    coeff = UCCDMatrix(phi.data.cpu[0].shape, geo.grids, False).matrix
 
     # phi.core = np.sin(np.pi * geo.mesh.x - np.sin(np.pi * geo.mesh.x) / np.pi)
     phi.core = np.sin(np.pi * geo.mesh.x)
@@ -29,7 +32,7 @@ def run(N, source, bc, ghc, c, scheme, dt):
     cpu_time = -time.time()
     while t < 2.0:
         t += dt
-        solve_hyperbolic(phi, vel, geo, rk3, bc, source, dt, scheme)
+        solve_hyperbolic(phi, vel, geo, rk3, bc, source, dt, scheme, coeff)
 
     phi_exact = Scalar(**geo_dict)
     # phi_exact.core = np.sin(np.pi * (geo.mesh.x - c * t) - np.sin(np.pi * (geo.mesh.x - c * t)) / np.pi)
@@ -44,10 +47,10 @@ if __name__ == "__main__":
 
     config.THREADING_LAYER = 'threadsafe'
 
-    run_scheme = getattr(import_module("pySciHPC.scheme.spatial"),
-                         input('Choose scheme (CCD, UCCD, WENO_JS, WENO_Z, CRWENO, CRWENO_LD): '))
+    # run_scheme = getattr(import_module("pySciHPC.scheme.spatial"),
+    #                      input('Choose scheme (CCD, UCCD, WENO_JS, WENO_Z, CRWENO, CRWENO_LD): '))
     data = {}
     for i in range(5, 10):
-        data[2 ** i] = run(2 ** i, pure_convection_source, periodic, 3, 1.0, run_scheme, 0.1 / 2 ** 9)
+        data[2 ** i] = run(2 ** i, pure_convection_source, periodic, 3, 1.0, UCCD, 0.1 / 2 ** 9)
     print("---Positive speed---")
     find_order(data)

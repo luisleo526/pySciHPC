@@ -1,6 +1,7 @@
-from cupyx.scipy.sparse import csr_matrix
-from scipy.sparse import csr_array
+from cupyx.scipy.sparse import csc_matrix
+from scipy.sparse import csc_array
 import cupy as cp
+
 
 class SparseMatrix:
 
@@ -15,17 +16,12 @@ class SparseMatrix:
         self.col.append(j)
 
     def to_cupy(self):
-        out = csr_matrix((cp.array(self.data), (cp.array(self.row), cp.array(self.col) )), dtype='float64')
-        self.data = []
-        self.col = []
-        self.row = []
-        return out
+        return csc_matrix((cp.array(self.data), (cp.array(self.row), cp.array(self.col))), dtype='float64')
 
     def to_numpy(self):
-        out = csr_array( (self.data, (self.row, self.col)), dtype='float64')
+        return csc_array((self.data, (self.row, self.col)), dtype='float64')
+
+    def clean(self):
         self.data = []
         self.col = []
         self.row = []
-
-        return out
-

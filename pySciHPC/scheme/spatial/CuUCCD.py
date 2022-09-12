@@ -1,73 +1,7 @@
-from pySciHPC.objects.sparse_matrix import SparseMatrix
 from numba import cuda
 import cupy as cp
-import numpy as np
-from cupyx.scipy.sparse.linalg import spsolve, cg
-
-
-def sparse_matrix_bc(N: int, dx: float):
-    m = SparseMatrix()
-    m.add(1.0, 0, 0)  # A[1, 0] = 1.0
-    m.add(2.0, 0, 1)  # A[2, 0] = 2.0
-    m.add(-dx, 0, N + 1)  # B[2, 0] = -dx
-
-    m.add(-2.5 / dx, N, 1)  # AA[2, 0] = -2.5 / dx
-    m.add(1.0, N, N)  # BB[1, 0] = 1.0
-    m.add(8.5, N, N + 1)  # BB[2, 0] = 8.5
-
-    m.add(1.0, N - 1, N - 1)  # A[1, -1] = 1.0
-    m.add(2.0, N - 1, N - 2)  # A[0, -1] = 2.0
-    m.add(dx, N - 1, 2 * N - 2)  # B[0, -1] = dx
-
-    m.add(2.5 / dx, 2 * N - 1, N - 2)  # AA[0, -1] = 2.5 / dx
-    m.add(1.0, 2 * N - 1, 2 * N - 1)  # BB[1, -1] = 1.0
-    m.add(8.5, 2 * N - 1, 2 * N - 2)  # BB[0, -1] = 8.5
-
-    return m
-
-
-def sparse_matrix(N: int, dx: float):
-    """
-    Construct (2N,2N) sparse matrix of coefficients
-    """
-    mu = sparse_matrix_bc(N, dx)
-    md = sparse_matrix_bc(N, dx)
-
-    a1: float = 0.875
-    b1: float = 0.1251282341599089
-    b2: float = -0.2487176584009104
-    b3: float = 0.0001282341599089
-
-    for i in range(1, N - 1):
-        mu.add(a1, i, i - 1)
-        mu.add(1.0, i, i)
-
-        md.add(1.0, i, i)
-        md.add(a1, i, i + 1)
-
-        mu.add(b1 * dx, i, N + i - 1)
-        mu.add(b2 * dx, i, N + i)
-        mu.add(b3 * dx, i, N + i + 1)
-
-        mu.add(-b3 * dx, i, N + i - 1)
-        mu.add(-b2 * dx, i, N + i)
-        mu.add(-b1 * dx, i, N + i + 1)
-
-        mu.add(-9.0 / 8.0 / dx, N + i, i - 1)
-        mu.add(9.0 / 8.0 / dx, N + i, i + 1)
-
-        md.add(-9.0 / 8.0 / dx, N + i, i - 1)
-        md.add(9.0 / 8.0 / dx, N + i, i + 1)
-
-        mu.add(-1.0 / 8.0, N + i, N + i - 1)
-        mu.add(1.0, N + i, N + i)
-        mu.add(-1.0 / 8.0, N + i, N + i + 1)
-
-        md.add(-1.0 / 8.0, N + i, N + i - 1)
-        md.add(1.0, N + i, N + i)
-        md.add(-1.0 / 8.0, N + i, N + i + 1)
-
-    return mu.to_cupy(), md.to_cupy()
+from cupyx.scipy.sparse import csr_matrix
+from pySciHPC.objects.coeffs import CCDMatrix
 
 
 @cuda.jit
@@ -109,7 +43,7 @@ def cuda_UCCD_src(f: cp.ndarray, dx: float, blockdim: int, threaddim: int):
 
     del dxs
 
-    return cp.concatenate((SU, SSU)), cp.concatenate((SD, SSD))
+    return csr_matrix(cp.concatenate((SU, SSU))), csr_matrix(cp.concatenate((SD, SSD)))
 
 
 @cuda.jit
@@ -122,54 +56,22 @@ def retrieve_from_c(fx, fxu, fxd, c):
             fx[i] = fxu[i]
 
 
-@cuda.jit
-def find_guess_solution_first(guess, f, dx):
-    i = cuda.grid(1)
-    if i > 0 and i < f.shape[0] - 1:
-        guess[i] = (f[i + 1] - f[i - 1]) / (2.0 * dx[i])
-    elif i == 0:
-        guess[i] = (f[i + 1] - f[i]) / dx[i]
-    else:
-        guess[i] = (f[i] - f[i - 1]) / dx[i]
-
-
-@cuda.jit
-def find_guess_solution_second(guess, f, dx):
-    i = cuda.grid(1)
-    if i > 0 and i < f.shape[0] - 1:
-        guess[i] = (f[i + 1] - 2.0 * f[i] + f[i - 1]) / dx[i] ** 2
-    elif i == 0:
-        guess[i] = (f[i + 2] - 2.0 * f[i + 1] + f[i]) / dx[i] ** 2
-    else:
-        guess[i] = (f[i] - 2.0 * f[i - 1] + f[i - 2]) / dx[i] ** 2
-
-
-def cuda_UCCD(f: cp.ndarray, c: cp.ndarray, dx: float, blockdim: int, threaddim: int, tol=1e-5):
+def cuda_UCCD(f: cp.ndarray, c: cp.ndarray, dx: float, blockdim: int, threaddim: int, dim: int, coeff: CCDMatrix):
     N = f.shape[0]
-    dxs = cp.ones_like(f) * dx
 
-    upwind, downwind = sparse_matrix(N, dx)
+    imu, imd = coeff.matrix['UCCD'][dim]
     su, sd = cuda_UCCD_src(f, dx, blockdim, threaddim)
 
     fx = cp.zeros_like(f)
-    fxx = cp.zeros_like(f)
 
-    find_guess_solution_first[blockdim, threaddim](fx, f, dxs)
-    find_guess_solution_second[blockdim, threaddim](fxx, f, dxs)
-
-    x0 = cp.concatenate((fx, fxx))
-
-    # solu = spsolve(upwind, su)
-    # sold = spsolve(downwind, sd)
-
-    solu = cg(upwind, su, x0, tol)[0]
-    sold = cg(downwind, sd, x0, tol)[0]
+    solu = (imu @ su).toarray()
+    sold = (imd @ sd).toarray()
 
     fxu, fxxu = solu[:N], solu[N:]
     fxd, fxxd = sold[:N], sold[N:]
 
     retrieve_from_c[blockdim, threaddim](fx, fxu, fxd, c)
 
-    del upwind, downwind, su, sd, solu, sold, fxu, fxxu, fxd, fxxd, x0, dxs
+    del su, sd, solu, sold, fxu, fxxu, fxd, fxxd
 
     return fx

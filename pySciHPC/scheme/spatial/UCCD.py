@@ -1,8 +1,9 @@
-from pySciHPC.utils.matrix_solver import twin_dec, twin_bks
+from pySciHPC.utils.matrix_solver import twin_dec, twin_bks, mat_mult
 from numba import njit, float64, int32, prange
 from .CCD import CCD_coeffs_bc
 import numpy as np
-
+from typing import Optional
+from numba.typed import List
 
 @njit(float64[:, :, :](int32, float64), parallel=True, fastmath=True, cache=True)
 def UCCD_coeffs(N: int32, dx: float64):
@@ -98,7 +99,7 @@ def UCCD_src(f: np.ndarray, N: int32, dx: float64):
 
 
 @njit(float64[:](float64[:], float64[:], float64), parallel=True, fastmath=True, cache=True)
-def UCCD(f: np.ndarray, c: np.ndarray, dx: float64):
+def UCCD2(f: np.ndarray, c: np.ndarray, dx: float64):
     AU, BU, AAU, BBU, AD, BD, AAD, BBD = UCCD_coeffs(f.size, dx)
     SU, SSU, SD, SSD = UCCD_src(f, f.size, dx)
 
@@ -107,6 +108,31 @@ def UCCD(f: np.ndarray, c: np.ndarray, dx: float64):
 
     fx = np.zeros_like(fxu)
     fxx = np.zeros_like(fxxu)
+    for i in prange(f.size):
+        if c[i] > 0.0:
+            fx[i] = fxu[i]
+        else:
+            fx[i] = fxd[i]
+        fxx[i] = 0.5 * (fxxu[i] + fxxd[i])
+
+    return fx
+
+
+@njit(float64[:](float64[:], float64[:], float64, float64[:, :, :]), parallel=True, fastmath=True, cache=True)
+def UCCD(f: np.ndarray, c: np.ndarray, dx: float64, coeff: np.ndarray):
+    SU, SSU, SD, SSD = UCCD_src(f, f.size, dx)
+
+    src_u = np.concatenate((SU, SSU))
+    src_d = np.concatenate((SD, SSD))
+
+    solu = mat_mult(coeff[0], src_u)
+    sold = mat_mult(coeff[1], src_d)
+
+    fxu, fxxu = solu[:f.size], solu[f.size:]
+    fxd, fxxd = sold[:f.size], sold[f.size:]
+
+    fx = np.zeros_like(f)
+    fxx = np.zeros_like(f)
     for i in prange(f.size):
         if c[i] > 0.0:
             fx[i] = fxu[i]
