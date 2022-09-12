@@ -36,7 +36,7 @@ def periodic_y(f: np.ndarray, ghc: int32):
 @cuda.jit
 def cuda_periodic_y(f, ghc_array):
     i, k = cuda.grid(2)
-    if i < f.shape[0] and k < f.shape[1]:
+    if i < f.shape[0] and k < f.shape[2]:
         ghc = ghc_array[i, 0, k]
         for j in range(ghc):
             f[i, j, k] = f[i, -2 * ghc - 1 + j, k]
@@ -72,14 +72,14 @@ def periodic(f: np.ndarray, ghc: int32, ndim: int32):
 
 
 def cuda_periodic(f: Scalar, geo: Scalar):
-    ghc_array = cp.ones_like(f.data.gpu[0], dtype='int32') * geo.ghc
-    cuda_periodic_x[geo.blockspergrid_jk, geo.threadsperblock_jk](f.data.gpu[0], ghc_array)
-    if geo.ndim > 1:
-        cuda_periodic_y[geo.blockspergrid_ik, geo.threadsperblock_ik](f.data.gpu[0], ghc_array)
-    if geo.ndim > 2:
-        cuda_periodic_z[geo.blockspergrid_ij, geo.threadsperblock_ij](f.data.gpu[0], ghc_array)
-    del ghc_array
+    # ghc_array = cp.ones_like(f.data.gpu[0], dtype='int32') * geo.ghc
+    # cuda_periodic_x[geo.blockspergrid_jk, geo.threadsperblock_jk](f.data.gpu[0], ghc_array)
+    # if geo.ndim > 1:
+    #     cuda_periodic_y[geo.blockspergrid_ik, geo.threadsperblock_ik](f.data.gpu[0], ghc_array)
+    # if geo.ndim > 2:
+    #     cuda_periodic_z[geo.blockspergrid_ij, geo.threadsperblock_ij](f.data.gpu[0], ghc_array)
+    # del ghc_array
 
-    # f.to_host()
-    # periodic(f.data.cpu[0], geo.ghc, geo.ndim)
-    # f.to_device()
+    f.to_host()
+    periodic(f.data.cpu[0], geo.ghc, geo.ndim)
+    f.to_device()

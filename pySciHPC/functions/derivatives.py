@@ -37,18 +37,30 @@ def find_fz(f: np.ndarray, dz: float64, c: np.ndarray, scheme: Callable, *args):
 
 
 def cuda_find_fx(f: Scalar, geo: Scalar, vel: Vector, scheme: Callable):
-    fx = find_fx(f.data.cpu[0], geo.dx, vel.x.data.cpu[0], scheme)
-    cuda_fx = cp.array(fx)
+    cuda_fx = cp.zeros_like(f.data.gpu[0])
+    if cuda_fx.shape[0] != 1:
+        for j in range(cuda_fx.shape[1]):
+            for k in range(cuda_fx.shape[2]):
+                cuda_fx[:, j, k] = scheme(f.data.gpu[:, j, k], vel.x.data.gpu[:, j, k],
+                                          geo.dx, f.blockspergrid[0], f.threadsperblock[0])
     return cuda_fx
 
 
 def cuda_find_fy(f: Scalar, geo: Scalar, vel: Vector, scheme: Callable):
-    fy = find_fy(f.data.cpu[0], geo.dy, vel.y.data.cpu[0], scheme)
-    cuda_fy = cp.array(fy)
+    cuda_fy = cp.zeros_like(f.data.gpu[0])
+    if cuda_fy.shape[1] != 1:
+        for i in range(cuda_fy.shape[0]):
+            for k in range(cuda_fy.shape[2]):
+                cuda_fy[i, : k] = scheme(f.data.gpu[i, :, k], vel.y.data.gpu[i, :, k],
+                                         geo.dy, f.blockspergrid[1], f.threadsperblock[1])
     return cuda_fy
 
 
 def cuda_find_fz(f: Scalar, geo: Scalar, vel: Vector, scheme: Callable):
-    fz = find_fz(f.data.cpu[0], geo.dz, vel.z.data.cpu[0], scheme)
-    cuda_fz = cp.array(fz)
+    cuda_fz = cp.zeros_like(f.data.gpu[0])
+    if cuda_fz.shape[1] != 1:
+        for i in range(cuda_fz.shape[0]):
+            for j in range(cuda_fz.shape[1]):
+                cuda_fz[i, j, :] = scheme(f.data.gpu[i, j, :], vel.z.data.gpu[i, j, :],
+                                          geo.dz, f.blockspergrid[2], f.threadsperblock[2])
     return cuda_fz

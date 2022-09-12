@@ -9,6 +9,7 @@ from pySciHPC.objects import Scalar, Vector
 from pySciHPC.pde_source.convection_equation import cuda_pure_convection_source
 from pySciHPC.scheme.temporal import cuda_rk3
 from pySciHPC.utils import find_order, l2_norm
+from pySciHPC.scheme.spatial import cuda_WENO_JS, cuda_WENO_Z
 
 from numba import config
 
@@ -53,11 +54,11 @@ if __name__ == "__main__":
 
     config.THREADING_LAYER = 'threadsafe'
 
-    run_scheme = getattr(import_module("pySciHPC.scheme.spatial"),
-                         input('Choose scheme (CCD, UCCD, WENO_JS, WENO_Z, CRWENO, CRWENO_LD): '))
+    # run_scheme = getattr(import_module("pySciHPC.scheme.spatial"),
+    #                      input('Choose scheme (CCD, UCCD, WENO_JS, WENO_Z, CRWENO, CRWENO_LD): '))
     data = {}
     for i in range(5, 10):
-        data[2 ** i] = run(2 ** i, cuda_pure_convection_source, cuda_periodic, 3, 1.0, run_scheme, 0.1 / 2 ** 9)
+        data[2 ** i] = run(2 ** i, cuda_pure_convection_source, cuda_periodic, 3, 1.0, cuda_WENO_JS, 0.1 / 2 ** 9)
         print(2 ** i, data[2 ** i])
     print("---Positive speed---")
     find_order(data)
