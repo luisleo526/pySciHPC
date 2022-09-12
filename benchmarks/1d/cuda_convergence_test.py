@@ -1,5 +1,4 @@
 import time
-from importlib import import_module
 
 import numpy as np
 
@@ -9,7 +8,7 @@ from pySciHPC.objects import Scalar, Vector
 from pySciHPC.pde_source.convection_equation import cuda_pure_convection_source
 from pySciHPC.scheme.temporal import cuda_rk3
 from pySciHPC.utils import find_order, l2_norm
-from pySciHPC.scheme.spatial import cuda_WENO_JS, cuda_WENO_Z
+from pySciHPC.scheme.spatial import cuda_WENO_JS, cuda_WENO_Z, cuda_UCCD
 
 from numba import config
 
@@ -27,8 +26,6 @@ def run(N, source, bc, ghc, c, scheme, dt):
 
     vel = Vector(**geo_dict)
     vel.x.data.cpu[0] = np.ones_like(phi.data.cpu[0]) * c
-
-    phi.to_device()
     vel.to_device()
 
     t = 0.0
@@ -37,15 +34,8 @@ def run(N, source, bc, ghc, c, scheme, dt):
         t += dt
         solve_hyperbolic(phi, vel, geo, cuda_rk3, bc, source, dt, scheme)
 
-    phi_exact = Scalar(**geo_dict)
-    # phi_exact.core = np.sin(np.pi * (geo.mesh.x - c * t) - np.sin(np.pi * (geo.mesh.x - c * t)) / np.pi)
-    phi_exact.core = np.sin(np.pi * (geo.mesh.x - c * t))
-
     phi.to_host()
-    error = l2_norm(phi_exact.core, phi.core)
-    with open(f"{N}.data", "w") as f:
-        for i in range(phi.core.shape[0]):
-            f.write(f"{phi.data.gpu[0, i + ghc, 0, 0]}, {phi.core[i]}, {phi_exact.core[i]}\n")
+    error = l2_norm(np.sin(np.pi * (geo.mesh.x - c * t)), phi.core)
 
     return error, cpu_time + time.time()
 
@@ -54,11 +44,10 @@ if __name__ == "__main__":
 
     config.THREADING_LAYER = 'threadsafe'
 
-    # run_scheme = getattr(import_module("pySciHPC.scheme.spatial"),
-    #                      input('Choose scheme (CCD, UCCD, WENO_JS, WENO_Z, CRWENO, CRWENO_LD): '))
     data = {}
     for i in range(5, 10):
-        data[2 ** i] = run(2 ** i, cuda_pure_convection_source, cuda_periodic, 3, 1.0, cuda_WENO_JS, 0.1 / 2 ** 9)
-        print(2 ** i, data[2 ** i])
+        N = 2 ** i
+        data[N] = run(N, cuda_pure_convection_source, cuda_periodic, 3, 1.0, cuda_UCCD, 0.1 / 2 ** 9)
+        print(N, data[N])
     print("---Positive speed---")
     find_order(data)

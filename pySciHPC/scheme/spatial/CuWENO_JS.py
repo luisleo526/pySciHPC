@@ -34,9 +34,9 @@ def cuda_WENO_weights_Z(b1, b2, b3):
 
 @cuda.jit(device=True)
 def cuda_WENO_indicators_p(a, b, c, d, e):
-    '''
+    """
     a : i-1 | b: i | c: i+1 | d: i+2 | e: i+3
-    '''
+    """
     b3 = 13.0 * (a - 2.0 * b + c) ** 2 + 3.0 * (a - 4.0 * b + 3.0 * c) ** 2
     b2 = 13.0 * (b - 2.0 * c + d) ** 2 + 3.0 * (b - d) ** 2
     b1 = 13.0 * (c - 2.0 * d + e) ** 2 + 3.0 * (3.0 * c - 4.0 * d + e) ** 2
@@ -46,9 +46,9 @@ def cuda_WENO_indicators_p(a, b, c, d, e):
 
 @cuda.jit(device=True)
 def cuda_WENO_indicators_m(a, b, c, d, e):
-    '''
+    """
     a : i-2 | b: i-1 | c: i | d: i+1 | e: i+2
-    '''
+    """
     b1 = 13.0 * (a - 2.0 * b + c) ** 2 + 3.0 * (a - 4.0 * b + 3.0 * c) ** 2
     b2 = 13.0 * (b - 2.0 * c + d) ** 2 + 3.0 * (b - d) ** 2
     b3 = 13.0 * (c - 2.0 * d + e) ** 2 + 3.0 * (3.0 * c - 4.0 * d + e) ** 2
@@ -58,9 +58,9 @@ def cuda_WENO_indicators_m(a, b, c, d, e):
 
 @cuda.jit
 def cuda_WENO_JS_p(a, b, c, d, e, fp):
-    '''
+    """
     a : i-1 | b: i | c: i+1 | d: i+2 | e: i+3
-    '''
+    """
     i = cuda.grid(1)
 
     if i > 2 and i < a.shape[0] - 3:
@@ -76,9 +76,9 @@ def cuda_WENO_JS_p(a, b, c, d, e, fp):
 
 @cuda.jit
 def cuda_WENO_JS_m(a, b, c, d, e, fm):
-    '''
+    """
     a : i-2 | b: i-1 | c: i | d: i+1 | e: i+2
-    '''
+    """
 
     i = cuda.grid(1)
 
@@ -95,9 +95,9 @@ def cuda_WENO_JS_m(a, b, c, d, e, fm):
 
 @cuda.jit
 def cuda_WENO_Z_p(a, b, c, d, e, fp):
-    '''
+    """
     a : i-1 | b: i | c: i+1 | d: i+2 | e: i+3
-    '''
+    """
     i = cuda.grid(1)
 
     if i > 2 and i < a.shape[0] - 3:
@@ -113,9 +113,9 @@ def cuda_WENO_Z_p(a, b, c, d, e, fp):
 
 @cuda.jit
 def cuda_WENO_Z_m(a, b, c, d, e, fm):
-    '''
+    """
     a : i-2 | b: i-1 | c: i | d: i+1 | e: i+2
-    '''
+    """
 
     i = cuda.grid(1)
 
@@ -149,11 +149,11 @@ def cuda_derivatives_from_flux(fp, fm, fx, dx):
         fx[i] = (fp[i] - fm[i]) / dx[i]
 
 
-def cuda_WENO_JS(f, c, dx, blockdim, threaddim):
-    fp = cp.zero_like(f)
-    fm = cp.zero_like(f)
-    fh = cp.zero_like(f)
-    fx = cp.zero_like(f)
+def cuda_WENO_JS(f: cp.ndarray, c: cp.ndarray, dx: float, blockdim: int, threaddim: int):
+    fp = cp.zeros_like(f)
+    fm = cp.zeros_like(f)
+    fh = cp.zeros_like(f)
+    fx = cp.zeros_like(f)
     dxs = cp.ones_like(f) * dx
 
     cuda_WENO_JS_p[blockdim, threaddim](cp.roll(f, 1), f, cp.roll(f, -1), cp.roll(f, -2), cp.roll(f, -3), fp)
@@ -166,11 +166,12 @@ def cuda_WENO_JS(f, c, dx, blockdim, threaddim):
 
     return fx
 
-def cuda_WENO_Z(f, c, dx, blockdim, threaddim):
-    fp = cp.zero_like(f)
-    fm = cp.zero_like(f)
-    fh = cp.zero_like(f)
-    fx = cp.zero_like(f)
+
+def cuda_WENO_Z(f: cp.ndarray, c: cp.ndarray, dx: float, blockdim: int, threaddim: int):
+    fp = cp.zeros_like(f)
+    fm = cp.zeros_like(f)
+    fh = cp.zeros_like(f)
+    fx = cp.zeros_like(f)
     dxs = cp.ones_like(f) * dx
 
     cuda_WENO_Z_p[blockdim, threaddim](cp.roll(f, 1), f, cp.roll(f, -1), cp.roll(f, -2), cp.roll(f, -3), fp)

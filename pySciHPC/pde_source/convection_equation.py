@@ -21,8 +21,6 @@ def pure_convection_source(f: np.ndarray, grids: np.ndarray, ghc: int32, ndim: i
 
 
 def cuda_pure_convection_source(f: Scalar, geo: Scalar, vel: Vector, scheme: Callable):
-    f.to_host()
-    vel.to_host()
     s = - cuda_find_fx(f, geo, vel, scheme) * vel.x.data.gpu[0]
     if geo.ndim > 1:
         s -= cuda_find_fy(f, geo, vel, scheme) * vel.y.data.gpu[0]
