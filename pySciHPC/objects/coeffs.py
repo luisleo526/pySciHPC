@@ -1,22 +1,9 @@
 import numpy as np
 from cupyx.scipy.sparse import csc_matrix
 from scipy.sparse.linalg import inv
+from scipy.sparse import bmat, diags
 
-from pySciHPC.scheme.spatial.CCD_sparse_matrix import CCD_sparse_matrix, UCCD_sparse_matrix
-
-
-class CCDMatrix:
-
-    def __init__(self, shape: np.shape, grids: np.ndarray):
-        self.matrix = []
-        for i in range(grids.size):
-            if grids[i] > 0:
-                m = CCD_sparse_matrix(shape[i], grids[i])
-                im = csc_matrix(inv(m.to_numpy()))
-            else:
-                im = None
-            self.matrix.append(im)
-
+from pySciHPC.scheme.spatial.UCCD import UCCD_coeffs
 
 class UCCDMatrix:
 
@@ -24,11 +11,21 @@ class UCCDMatrix:
         self.matrix = []
         for i in range(grids.size):
             if grids[i] > 0:
-                mu, md = UCCD_sparse_matrix(shape[i], grids[i])
-                # imu = csc_matrix(inv(mu.to_numpy())).toarray()
-                # imd = csc_matrix(inv(md.to_numpy())).toarray()
-                imu = mu.to_cupy()
-                imd = md.to_cupy()
+                AU, BU, AAU, BBU, AD, BD, AAD, BBD = UCCD_coeffs(shape[i], grids[i])
+
+                AU = diags([AU[0, 1:], AU[1, :], AU[2, :-1]], [-1, 0, 1], format='csc')
+                BU = diags([BU[0, 1:], BU[1, :], BU[2, :-1]], [-1, 0, 1], format='csc')
+                AAU = diags([AAU[0, 1:], AAU[1, :], AAU[2, :-1]], [-1, 0, 1], format='csc')
+                BBU = diags([BBU[0, 1:], BBU[1, :], BBU[2, :-1]], [-1, 0, 1], format='csc')
+
+                AD = diags([AD[0, 1:], AD[1, :], AD[2, :-1]], [-1, 0, 1], format='csc')
+                BD = diags([BD[0, 1:], BD[1, :], BD[2, :-1]], [-1, 0, 1], format='csc')
+                AAD = diags([AAD[0, 1:], AAD[1, :], AAD[2, :-1]], [-1, 0, 1], format='csc')
+                BBD = diags([BBD[0, 1:], BBD[1, :], BBD[2, :-1]], [-1, 0, 1], format='csc')
+
+                imu = csc_matrix(bmat([[AU, BU], [AAU, BBU]], format='csc'))
+                imd = csc_matrix(bmat([[AD, BD], [AAD, BBD]], format='csc'))
+
             else:
                 imu = imd = None
 
