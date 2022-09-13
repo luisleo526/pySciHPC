@@ -100,9 +100,9 @@ def twin_bks(a: np.ndarray, b: np.ndarray, aa: np.ndarray, bb: np.ndarray, s: np
 
 @njit(parallel=True)
 def mat_mult(A, B):
-    assert A.shape[1] == B.shape[0]
+    assert A.shape[1] == A.shape[0] == B.shape[0]
     res = np.zeros(A.shape[0], dtype='float64')
     for i in prange(A.shape[0]):
         for j in range(A.shape[1]):
-                res[i] += A[i, j] * B[j]
+            res[i] += A[i, j] * B[j]
     return res

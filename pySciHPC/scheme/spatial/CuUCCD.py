@@ -1,8 +1,6 @@
-from numba import cuda
 import cupy as cp
-from cupyx.scipy.sparse import csr_matrix
-from pySciHPC.objects.coeffs import CCDMatrix
-
+from numba import cuda
+from cupyx.scipy.sparse.linalg import spsolve
 
 @cuda.jit
 def cuda_UCCD_src_kernel(f, su, ssu, sd, ssd, dx):
@@ -21,6 +19,7 @@ def cuda_UCCD_src_kernel(f, su, ssu, sd, ssd, dx):
 
 
 def cuda_UCCD_src(f: cp.ndarray, dx: float, blockdim: int, threaddim: int):
+
     SU = cp.zeros_like(f)
     SD = cp.zeros_like(f)
     SSU = cp.zeros_like(f)
@@ -32,7 +31,7 @@ def cuda_UCCD_src(f: cp.ndarray, dx: float, blockdim: int, threaddim: int):
     SU[0] = (-3.5 * f[0] + 4.0 * f[1] - 0.5 * f[2]) / dx
     SSU[0] = (34.0 / 3.0 * f[0] - 83.0 / 4.0 * f[1] + 10.0 * f[2] - 7.0 / 12.0 * f[3]) / dx ** 2
 
-    SU[-1] = -(-3.5 * f[-1] + 4.0 * f[-2] - 0.5 * f[-3]) / dx
+    SU[-1] = (-3.5 * f[-1] + 4.0 * f[-2] - 0.5 * f[-3]) / dx
     SSU[-1] = (34.0 / 3.0 * f[-1] - 83.0 / 4.0 * f[-2] + 10.0 * f[-3] - 7.0 / 12.0 * f[-4]) / dx ** 2
 
     SD[0] = (-3.5 * f[0] + 4.0 * f[1] - 0.5 * f[2]) / dx
@@ -43,7 +42,7 @@ def cuda_UCCD_src(f: cp.ndarray, dx: float, blockdim: int, threaddim: int):
 
     del dxs
 
-    return csr_matrix(cp.concatenate((SU, SSU))), csr_matrix(cp.concatenate((SD, SSD)))
+    return cp.concatenate((SU, SSU)), cp.concatenate((SD, SSD))
 
 
 @cuda.jit
@@ -56,16 +55,19 @@ def retrieve_from_c(fx, fxu, fxd, c):
             fx[i] = fxu[i]
 
 
-def cuda_UCCD(f: cp.ndarray, c: cp.ndarray, dx: float, blockdim: int, threaddim: int, dim: int, coeff: CCDMatrix):
+def cuda_UCCD(f: cp.ndarray, c: cp.ndarray, dx: float, blockdim: int, threaddim: int, coeff):
     N = f.shape[0]
 
-    imu, imd = coeff.matrix['UCCD'][dim]
+    imu, imd = coeff
     su, sd = cuda_UCCD_src(f, dx, blockdim, threaddim)
 
     fx = cp.zeros_like(f)
 
-    solu = (imu @ su).toarray()
-    sold = (imd @ sd).toarray()
+    # solu = imu.dot(su)
+    # sold = imd.dot(sd)
+
+    solu = spsolve(imu, su)
+    sold = spsolve(imd, sd)
 
     fxu, fxxu = solu[:N], solu[N:]
     fxd, fxxd = sold[:N], sold[N:]

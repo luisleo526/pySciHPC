@@ -1,17 +1,16 @@
 import time
 
 import numpy as np
+from numba import config
 
 from pySciHPC import solve_hyperbolic
 from pySciHPC.boundary_conditions import cuda_periodic
 from pySciHPC.objects import Scalar, Vector
+from pySciHPC.objects.coeffs import UCCDMatrix
 from pySciHPC.pde_source.convection_equation import cuda_pure_convection_source
-from pySciHPC.objects.coeffs import CCDMatrix
+from pySciHPC.scheme.spatial import cuda_UCCD
 from pySciHPC.scheme.temporal import cuda_rk3
 from pySciHPC.utils import find_order, l2_norm
-from pySciHPC.scheme.spatial import cuda_WENO_JS, cuda_WENO_Z, cuda_UCCD
-
-from numba import config
 
 
 def run(N, source, bc, ghc, c, scheme, dt):
@@ -19,7 +18,7 @@ def run(N, source, bc, ghc, c, scheme, dt):
 
     geo = Scalar(**geo_dict, no_data=True)
     phi = Scalar(**geo_dict, no_axis=True)
-    coeff = CCDMatrix(phi.data.cpu[0].shape, geo.grids, use_cuda=True)
+    coeff = UCCDMatrix(phi.data.cpu[0].shape, geo.grids).matrix
 
     # phi.core = np.sin(np.pi * geo.mesh.x - np.sin(np.pi * geo.mesh.x) / np.pi)
     phi.core = np.sin(np.pi * geo.mesh.x)
@@ -35,6 +34,7 @@ def run(N, source, bc, ghc, c, scheme, dt):
     while t < 2.0:
         t += dt
         solve_hyperbolic(phi, vel, geo, cuda_rk3, bc, source, dt, scheme, coeff)
+        print(t)
 
     phi.to_host()
     error = l2_norm(np.sin(np.pi * (geo.mesh.x - c * t)), phi.core)

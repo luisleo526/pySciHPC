@@ -1,9 +1,9 @@
-from pySciHPC.utils.matrix_solver import twin_dec, twin_bks, mat_mult
-from numba import njit, float64, int32, prange
-from .CCD import CCD_coeffs_bc
 import numpy as np
-from typing import Optional
-from numba.typed import List
+from numba import njit, float64, int32, prange
+
+from pySciHPC.utils.matrix_solver import twin_dec, twin_bks
+from .CCD import CCD_coeffs_bc
+
 
 @njit(float64[:, :, :](int32, float64), parallel=True, fastmath=True, cache=True)
 def UCCD_coeffs(N: int32, dx: float64):
@@ -56,10 +56,7 @@ def UCCD_coeffs(N: int32, dx: float64):
         BBD[2, i] = -1.0 / 8.0
 
     CCD_coeffs_bc(AU, BU, AAU, BBU, dx)
-    twin_dec(AU, BU, AAU, BBU)
-
     CCD_coeffs_bc(AD, BD, AAD, BBD, dx)
-    twin_dec(AD, BD, AAD, BBD)
 
     return np.stack((AU, BU, AAU, BBU, AD, BD, AAD, BBD))
 
@@ -99,8 +96,12 @@ def UCCD_src(f: np.ndarray, N: int32, dx: float64):
 
 
 @njit(float64[:](float64[:], float64[:], float64), parallel=True, fastmath=True, cache=True)
-def UCCD2(f: np.ndarray, c: np.ndarray, dx: float64):
+def UCCD(f: np.ndarray, c: np.ndarray, dx: float64):
     AU, BU, AAU, BBU, AD, BD, AAD, BBD = UCCD_coeffs(f.size, dx)
+
+    twin_dec(AU, BU, AAU, BBU)
+    twin_dec(AD, BD, AAD, BBD)
+
     SU, SSU, SD, SSD = UCCD_src(f, f.size, dx)
 
     fxu, fxxu = twin_bks(AU, BU, AAU, BBU, SU, SSU)
@@ -108,31 +109,6 @@ def UCCD2(f: np.ndarray, c: np.ndarray, dx: float64):
 
     fx = np.zeros_like(fxu)
     fxx = np.zeros_like(fxxu)
-    for i in prange(f.size):
-        if c[i] > 0.0:
-            fx[i] = fxu[i]
-        else:
-            fx[i] = fxd[i]
-        fxx[i] = 0.5 * (fxxu[i] + fxxd[i])
-
-    return fx
-
-
-@njit(float64[:](float64[:], float64[:], float64, float64[:, :, :]), parallel=True, fastmath=True, cache=True)
-def UCCD(f: np.ndarray, c: np.ndarray, dx: float64, coeff: np.ndarray):
-    SU, SSU, SD, SSD = UCCD_src(f, f.size, dx)
-
-    src_u = np.concatenate((SU, SSU))
-    src_d = np.concatenate((SD, SSD))
-
-    solu = mat_mult(coeff[0], src_u)
-    sold = mat_mult(coeff[1], src_d)
-
-    fxu, fxxu = solu[:f.size], solu[f.size:]
-    fxd, fxxd = sold[:f.size], sold[f.size:]
-
-    fx = np.zeros_like(f)
-    fxx = np.zeros_like(f)
     for i in prange(f.size):
         if c[i] > 0.0:
             fx[i] = fxu[i]
