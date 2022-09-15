@@ -19,8 +19,8 @@ def run(N, source, bc, ghc, c, scheme, dt):
     geo = Scalar(**geo_dict, no_data=True)
     phi = Scalar(**geo_dict, no_axis=True)
 
-    # phi.core = np.sin(np.pi * geo.mesh.x - np.sin(np.pi * geo.mesh.x) / np.pi)
-    phi.core = np.sin(np.pi * geo.mesh.x)
+    phi.core = np.sin(np.pi * geo.mesh.x - np.sin(np.pi * geo.mesh.x) / np.pi)
+    # phi.core = np.sin(np.pi * geo.mesh.x)
     bc(phi.data.cpu[0], phi.ghc, phi.ndim)
 
     vel = Vector(**geo_dict)
@@ -33,8 +33,8 @@ def run(N, source, bc, ghc, c, scheme, dt):
         solve_hyperbolic(phi, vel, geo, rk3, bc, source, dt, scheme)
 
     phi_exact = Scalar(**geo_dict)
-    # phi_exact.core = np.sin(np.pi * (geo.mesh.x - c * t) - np.sin(np.pi * (geo.mesh.x - c * t)) / np.pi)
-    phi_exact.core = np.sin(np.pi * (geo.mesh.x - c * t))
+    phi_exact.core = np.sin(np.pi * (geo.mesh.x - c * t) - np.sin(np.pi * (geo.mesh.x - c * t)) / np.pi)
+    # phi_exact.core = np.sin(np.pi * (geo.mesh.x - c * t))
     bc(phi_exact.data.cpu[0], phi_exact.ghc, phi_exact.ndim)
 
     error = l2_norm(phi_exact.core, phi.core)

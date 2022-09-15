@@ -1,6 +1,5 @@
 import numpy as np
-import cupy as cp
-from numba import njit, prange, int32, float64, cuda
+from numba import njit, prange, int32, float64
 
 from pySciHPC.objects.base import Scalar
 

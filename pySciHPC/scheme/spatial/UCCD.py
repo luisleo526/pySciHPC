@@ -4,6 +4,10 @@ from numba import njit, float64, int32, prange
 from pySciHPC.utils.matrix_solver import twin_dec, twin_bks
 from .CCD import CCD_coeffs_bc
 
+from scipy.sparse import bmat, diags
+from scipy.sparse.linalg import spsolve
+
+FORMAT = 'csr'
 
 @njit(float64[:, :, :](int32, float64), parallel=True, fastmath=True, cache=True)
 def UCCD_coeffs(N: int32, dx: float64):
@@ -122,6 +126,9 @@ def UCCD(f: np.ndarray, c: np.ndarray, dx: float64):
 @njit(float64[:, :](float64[:], float64[:], float64), parallel=True, fastmath=True, cache=True)
 def UCCD_full(f: np.ndarray, c: np.ndarray, dx: float64):
     AU, BU, AAU, BBU, AD, BD, AAD, BBD = UCCD_coeffs(f.size, dx)
+    twin_dec(AU, BU, AAU, BBU)
+    twin_dec(AD, BD, AAD, BBD)
+
     SU, SSU, SD, SSD = UCCD_src(f, f.size, dx)
 
     fxu, fxxu = twin_bks(AU, BU, AAU, BBU, SU, SSU)

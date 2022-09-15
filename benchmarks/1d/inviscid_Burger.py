@@ -2,17 +2,15 @@ import time
 from importlib import import_module
 from typing import Callable
 
-import matplotlib.pyplot as plt
 import numpy as np
 from numba import njit, float64, int32
 
+from pySciHPC import solve_hyperbolic
 from pySciHPC.boundary_conditions import periodic
 from pySciHPC.functions.derivatives import find_fx
 from pySciHPC.objects import Scalar
 from pySciHPC.scheme.temporal import rk3
 from pySciHPC.utils import find_order, l2_norm
-from pySciHPC import solve_hyperbolic
-from pySciHPC.pde_source.convection_equation import pure_convection_source
 
 
 @njit(parallel=True, fastmath=True, nogil=True)
