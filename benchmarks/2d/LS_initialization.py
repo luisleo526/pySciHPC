@@ -1,3 +1,6 @@
+import sys
+
+sys.path.insert(0, '../../pySciHPC')
 import numpy as np
 
 from pySciHPC import solve_hyperbolic_steady

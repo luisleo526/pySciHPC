@@ -1,3 +1,6 @@
+import sys
+
+sys.path.insert(0, '../../pySciHPC')
 import time
 from importlib import import_module
 

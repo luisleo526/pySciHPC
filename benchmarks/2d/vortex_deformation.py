@@ -1,3 +1,6 @@
+import sys
+
+sys.path.insert(0, '../../pySciHPC')
 import numpy as np
 from numba import set_num_threads
 
@@ -7,7 +10,7 @@ from pySciHPC.objects import LevelSetFunction
 from pySciHPC.objects import Scalar, Vector
 from pySciHPC.pde_source.convection_equation import pure_convection_source
 from pySciHPC.pde_source.mass_preserving_level_set import mpls_source, mpls_criterion
-from pySciHPC.scheme.spatial import WENO_JS, UCCD
+from pySciHPC.scheme.spatial import UCCD
 from pySciHPC.scheme.temporal import rk3
 from pySciHPC.utils import VTKPlotter
 from pySciHPC.utils import l2_norm

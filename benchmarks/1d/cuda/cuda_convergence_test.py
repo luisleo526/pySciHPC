@@ -1,3 +1,6 @@
+import sys
+
+sys.path.insert(0, '../../../pySciHPC')
 import time
 
 import numpy as np
@@ -5,7 +8,6 @@ from numba import config
 
 from pySciHPC import solve_hyperbolic
 from pySciHPC.boundary_conditions import cuda_periodic
-from pySciHPC.cuda_solvers.weno_solver import CudaWENOSolver
 from pySciHPC.cuda_solvers.uccd_solver import CudaUCCDSovler
 from pySciHPC.objects import Scalar, Vector
 from pySciHPC.pde_source.convection_equation import cuda_pure_convection_source

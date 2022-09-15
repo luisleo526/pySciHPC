@@ -98,11 +98,11 @@ def Godunov_WENO_grad(f: np.ndarray, grids: np.ndarray, ghc: int32, ndim: int32)
     return grad
 
 
-# @njit(float64[:, :, :](float64[:, :, :], float64[:], int32, int32), parallel=True, fastmath=True, nogil=True)
-# def CCD_grad(f: np.ndarray, grids: np.ndarray, ghc: int32, ndim: int32):
-#     dx, dy, dz = grids
-#     fx = find_fx(f, dx, f, CCD)
-#     fy = find_fy(f, dy, f, CCD)
-#     fz = find_fz(f, dz, f, CCD)
-#
-#     return np.sqrt(fx ** 2 + fy ** 2 + fz ** 2)
+@njit(float64[:, :, :](float64[:, :, :], float64[:], int32, int32), parallel=True, fastmath=True, nogil=True)
+def CCD_grad(f: np.ndarray, grids: np.ndarray, ghc: int32, ndim: int32):
+    dx, dy, dz = grids
+    fx = find_fx(f, dx, f, CCD)
+    fy = find_fy(f, dy, f, CCD)
+    fz = find_fz(f, dz, f, CCD)
+
+    return np.sqrt(fx ** 2 + fy ** 2 + fz ** 2)
