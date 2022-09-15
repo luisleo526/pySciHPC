@@ -1,6 +1,6 @@
 from typing import Callable
 
-from pySciHPC.objects.base import Scalar, Vector
+from pySciHPC.core.data import Scalar, Vector
 from pySciHPC.cuda.solvers import CudaDerivativesSolver
 
 

@@ -6,15 +6,15 @@ from numba import set_num_threads
 
 from pySciHPC.core.boundary_conditions import zero_order
 from pySciHPC.core.functions.gradients import CCD_grad
-from pySciHPC.objects import LevelSetFunction
-from pySciHPC.objects import Scalar, Vector
+from pySciHPC.core.level_set_method import LevelSetFunction
+from pySciHPC.core.data import Scalar, Vector
 from pySciHPC.core.pde_source.convection_equation import pure_convection_source
 from pySciHPC.core.pde_source.mass_preserving_level_set import mpls_source, mpls_criterion
 from pySciHPC.core.scheme.spatial import UCCD
 from pySciHPC.core.scheme.temporal import rk3
-from pySciHPC.core.utils import VTKPlotter
-from pySciHPC.core.utils import l2_norm
-from pySciHPC.core import solve_hyperbolic, solve_hyperbolic_steady
+from pySciHPC.utils.plotter import VTKPlotter
+from pySciHPC.utils.utils import l2_norm
+from pySciHPC.core import solve_hyperbolic
 
 if __name__ == "__main__":
 

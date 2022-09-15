@@ -3,8 +3,8 @@ from typing import Callable
 import numpy as np
 from numba import int32, float64, njit
 
-from pySciHPC.core.functions.level_set import Heaviside, Delta
-from pySciHPC.objects.level_set_function import find_mass_vol
+from pySciHPC.core.level_set_method.basic import Heaviside, Delta
+from ..level_set_method.basic import find_mass_vol
 
 
 @njit(parallel=True, fastmath=True, nogil=True)

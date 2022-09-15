@@ -9,10 +9,10 @@ from numba import config
 from pySciHPC.cuda import solve_hyperbolic
 from pySciHPC.cuda.boundary_conditions.periodic import cuda_periodic
 from pySciHPC.cuda.solvers.uccd_solver import CudaUCCDSovler
-from pySciHPC.objects import Scalar, Vector
+from pySciHPC.core.data import Scalar, Vector
 from pySciHPC.cuda.pde_source.convection import cuda_pure_convection_source
 from pySciHPC.cuda.scheme.temporal.Runge_Kutta import cuda_rk3
-from pySciHPC.core.utils import find_order, l2_norm
+from pySciHPC.utils import find_order, l2_norm
 
 
 def run(N, source, bc, ghc, c, scheme, dt):

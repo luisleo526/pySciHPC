@@ -1,7 +1,7 @@
-import numpy as np
 import cupy as cp
-from munch import Munch
+import numpy as np
 from math import ceil
+from munch import Munch
 
 
 class Bridge:
@@ -45,22 +45,16 @@ class Scalar:
             self.dz = self.z.cpu[1] - self.z.cpu[0]
             self.grids = np.array([self.dx, self.dy, self.dz], dtype='float64')
 
+            self.h = min(self.grids[:self.ndim])
+
         array_shape = np.array(ghc_array, dtype=int) * 2 + self.shape
         if not no_data:
             self.data = Bridge(
                 np.stack([np.zeros(array_shape, dtype=np.float64) for _ in range(num_of_data)]), use_cuda)
+            self.buffer = np.zeros(array_shape, dtype=np.float64)
 
         self.threadsperblock = (threadsperblock, threadsperblock, threadsperblock)
         self.blockspergrid = tuple([int(ceil(array_shape[i] / self.threadsperblock[i])) for i in range(3)])
-
-        self.threadsperblock_ij = (self.threadsperblock[0], self.threadsperblock[1])
-        self.blockspergrid_ij = (self.blockspergrid[0], self.blockspergrid[1])
-
-        self.threadsperblock_ik = (self.threadsperblock[0], self.threadsperblock[2])
-        self.blockspergrid_ik = (self.blockspergrid[0], self.blockspergrid[2])
-
-        self.threadsperblock_jk = (self.threadsperblock[1], self.threadsperblock[2])
-        self.blockspergrid_jk = (self.blockspergrid[1], self.blockspergrid[2])
 
     @property
     def core(self):
@@ -135,27 +129,47 @@ class Vector:
             self.z = Scalar(_size, ghc, _axis_data, num_of_data, no_axis=True, no_data=False, use_cuda=use_cuda,
                             threadsperblock=threadsperblock)
 
-    def of(self, i):
+    @property
+    def of0(self):
         if self.ndim == 1:
-            return np.stack([self.x.data.cpu[i]])
+            return np.stack([self.x.data.cpu[0]])
         elif self.ndim == 2:
-            return np.stack([self.x.data.cpu[i], self.y.data.cpu[i]])
+            return np.stack([self.x.data.cpu[0], self.y.data.cpu[0]])
         else:
-            return np.stack([self.x.data.cpu[i], self.y.data.cpu[i], self.z.data.cpu[i]])
+            return np.stack([self.x.data.cpu[0], self.y.data.cpu[0], self.z.data.cpu[0]])
+
+    @of0.setter
+    def of0(self, value):
+        if self.ndim == 1:
+            self.x.data.cpu[0] = value
+        elif self.ndim == 2:
+            self.x.data.cpu[0] = value[0]
+            self.y.data.cpu[0] = value[1]
+        else:
+            self.x.data.cpu[0] = value[0]
+            self.y.data.cpu[0] = value[1]
+            self.z.data.cpu[0] = value[2]
 
     @property
     def core(self):
         if self.ndim == 1:
             return self.x.core
         elif self.ndim == 2:
-            x = np.ascontiguousarray(self.x.core)
-            y = np.ascontiguousarray(self.y.core)
-            return np.stack([x, y])
+            return np.stack([self.x.core, self.y.core])
         else:
-            x = np.ascontiguousarray(self.x.core)
-            y = np.ascontiguousarray(self.y.core)
-            z = np.ascontiguousarray(self.z.core)
-            return np.stack([x, y, z])
+            return np.stack([self.x.core, self.y.core, self.z.core])
+
+    @core.setter
+    def core(self, value):
+        if self.ndim == 1:
+            self.x.core = value[0]
+        elif self.ndim == 2:
+            self.x.core = value[0]
+            self.y.core = value[1]
+        else:
+            self.x.core = value[0]
+            self.y.core = value[1]
+            self.z.core = value[2]
 
     def to_device(self):
         self.x.to_device()

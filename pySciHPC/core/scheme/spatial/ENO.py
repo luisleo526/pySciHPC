@@ -3,8 +3,8 @@ from typing import Callable
 import numpy as np
 from numba import njit, float64, prange
 
-from pySciHPC.core.utils.matrix_solver import TDMA
-from pySciHPC.core.utils.utils import pad
+from ....utils.matrix_solver import TDMA
+from ....utils.utils import pad
 
 
 @njit(float64[:](float64, float64, float64))

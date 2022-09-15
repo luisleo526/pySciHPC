@@ -11,9 +11,9 @@ from numba import float64, njit
 from pySciHPC.cuda import solve_hyperbolic
 from pySciHPC.cuda.boundary_conditions.periodic import cuda_periodic
 from pySciHPC.cuda.solvers import CudaUCCDSovler, CudaDerivativesSolver
-from pySciHPC.objects import Scalar, Vector
+from pySciHPC.core.data import Scalar, Vector
 from pySciHPC.cuda.scheme.temporal import cuda_rk3
-from pySciHPC.core.utils import find_order, l2_norm
+from pySciHPC.utils import find_order, l2_norm
 
 burger_flux = cp.ElementwiseKernel('float64 f', 'float64 ff', 'ff = f * f * 0.5', 'burger_flux')
 neg_assign = cp.ElementwiseKernel('float64 f', 'float64 ff', 'ff = -f', 'neg_assign', no_return=True)

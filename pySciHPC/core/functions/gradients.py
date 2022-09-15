@@ -1,14 +1,14 @@
 import numpy as np
 from numba import int32, float64, njit, prange
 
-from pySciHPC.core.boundary_conditions.zero_order import zero_order_x, zero_order_y, zero_order_z, zero_order
-from pySciHPC.core.scheme.spatial.ENO import WENO_p, WENO_m, WENO_weights_JS
-from pySciHPC.core.scheme.spatial.CCD import CCD
-from pySciHPC.core.functions.derivatives import find_fx, find_fy, find_fz
+from ..boundary_conditions.zero_order import zero_order_x, zero_order_y, zero_order_z, zero_order
+from ..functions.derivatives import find_fx, find_fy, find_fz
+from ..scheme.spatial.CCD import CCD
+from ..scheme.spatial.ENO import WENO_p, WENO_m, WENO_weights_JS
 
 
 @njit(float64[:, :, :](float64[:, :, :], float64[:], int32, int32), parallel=True, fastmath=True, nogil=True)
-def Godunov_WENO_grad(f: np.ndarray, grids: np.ndarray, ghc: int32, ndim: int32):
+def godunov_wenojs(f: np.ndarray, grids: np.ndarray, ghc: int32, ndim: int32):
     assert ndim > 1
     dx, dy, dz = grids
     grad = np.zeros_like(f)

@@ -1,11 +1,11 @@
 from typing import Callable
 
 import numpy as np
-from numba import njit, float64, int32
+from numba import njit
 
 
 @njit(parallel=True, fastmath=True, nogil=True)
-def rk3(dt: float64, f: np.ndarray, grids: np.ndarray, ghc: int32, ndim: int32, find_source: Callable,
+def rk3(dt: float, f: np.ndarray, grids: np.ndarray, ghc: int, ndim: int, find_source: Callable,
         boundary_condition: Callable, c: np.ndarray, *args):
     s1 = find_source(f, grids, ghc, ndim, c, *args)
     f += s1 * dt

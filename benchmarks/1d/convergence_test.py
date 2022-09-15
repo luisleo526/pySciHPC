@@ -7,11 +7,11 @@ import numpy as np
 
 from pySciHPC.core import solve_hyperbolic
 from pySciHPC.core.boundary_conditions import periodic
-from pySciHPC.objects import Scalar, Vector
+from pySciHPC.core.data import Scalar, Vector
 from pySciHPC.core.pde_source.convection_equation import pure_convection_source
 from pySciHPC.core.scheme.temporal import rk3
 from pySciHPC.core.scheme.spatial import UCCD
-from pySciHPC.core.utils import find_order, l2_norm
+from pySciHPC.utils.utils import find_order, l2_norm
 from numba import config
 
 

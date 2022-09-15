@@ -4,7 +4,7 @@ import cupy as cp
 import numpy as np
 from numba import njit, float64, prange
 
-from pySciHPC.objects.base import Scalar, Vector
+from ..data import Scalar, Vector
 
 
 @njit(parallel=True, fastmath=True, nogil=True)

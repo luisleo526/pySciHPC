@@ -1,5 +1,5 @@
 from uvw import RectilinearGrid, DataArray
-from pySciHPC.objects import Scalar
+from pySciHPC.core.data import Scalar
 from pathlib import Path
 import numpy as np
 import json

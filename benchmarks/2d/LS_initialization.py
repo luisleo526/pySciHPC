@@ -1,14 +1,13 @@
 import sys
 
 sys.path.insert(0, '../../')
-import numpy as np
 
-from pySciHPC.core import solve_hyperbolic_steady
 from pySciHPC.core.boundary_conditions import zero_order
-from pySciHPC.objects import Scalar, LevelSetFunction
-from pySciHPC.core.pde_source.redistance_eqaution import redistance_source, redistance_init, redistance_criterion
-from pySciHPC.core.scheme.temporal import rk3
-from pySciHPC.core.utils import VTKPlotter
+from pySciHPC.core.data import Scalar
+from pySciHPC.core.level_set_method import LevelSetFunction, solve_redistance
+from pySciHPC.utils.plotter import VTKPlotter
+
+import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
     geo_dict = dict(_size=[64, 128], ghc=3, _axis_data=[(0.0, 1.0), (0.0, 1.0)])
@@ -31,8 +30,7 @@ if __name__ == "__main__":
     plotter.add_scalar(phi.core, "phi")
     plotter.close()
 
-    solve_hyperbolic_steady(phi, np.zeros_like(phi.data.cpu[0]), geo, rk3, zero_order, redistance_source, 0.1 * geo.dy,
-                            redistance_init, redistance_criterion, 1.0e-10, 5.0, phi.interface_width, True)
+    solve_redistance(phi, geo, period=4.0, cfl=0.1, init=True)
 
     plotter.create()
     plotter.add_scalar(phi.core, "phi")

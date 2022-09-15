@@ -3,7 +3,7 @@ from typing import Callable
 import numpy as np
 from numba import int32, njit
 
-from pySciHPC.core.functions.derivatives import find_fx, find_fy, find_fz
+from ..functions.derivatives import find_fx, find_fy, find_fz
 
 
 @njit(parallel=True, fastmath=True, nogil=True)

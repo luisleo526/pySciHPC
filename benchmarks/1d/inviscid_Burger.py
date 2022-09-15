@@ -10,10 +10,10 @@ from numba import njit, float64, int32
 from pySciHPC.core import solve_hyperbolic
 from pySciHPC.core.boundary_conditions import periodic
 from pySciHPC.core.functions.derivatives import find_fx
-from pySciHPC.objects import Scalar, Vector
+from pySciHPC.core.data import Scalar, Vector
 from pySciHPC.core.scheme.temporal import rk3
 from pySciHPC.core.scheme.spatial import UCCD
-from pySciHPC.core.utils import find_order, l2_norm
+from pySciHPC.utils import find_order, l2_norm
 
 
 @njit(parallel=True, fastmath=True, nogil=True)
