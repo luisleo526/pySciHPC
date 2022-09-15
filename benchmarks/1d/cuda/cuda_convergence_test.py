@@ -47,9 +47,17 @@ if __name__ == "__main__":
     config.THREADING_LAYER = 'threadsafe'
 
     data = {}
-    for i in range(5, 11):
+    for i in range(5, 10):
         N = 2 ** i
-        data[N] = run(N, cuda_pure_convection_source, cuda_periodic, 3, 1.0, CudaUCCDSovler, 0.1 / 2 ** 10)
+        data[N] = run(N, cuda_pure_convection_source, cuda_periodic, 3, 1.0, CudaUCCDSovler, 0.1 / 2 ** 9)
         print(N, data[N])
     print("---Positive speed---")
+    find_order(data)
+
+    data = {}
+    for i in range(5, 10):
+        N = 2 ** i
+        data[N] = run(N, cuda_pure_convection_source, cuda_periodic, 3, -1.0, CudaUCCDSovler, 0.1 / 2 ** 9)
+        print(N, data[N])
+    print("---Negative speed---")
     find_order(data)

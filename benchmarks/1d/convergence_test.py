@@ -47,6 +47,13 @@ if __name__ == "__main__":
 
     data = {}
     for i in range(5, 10):
+        data[2 ** i] = run(2 ** i, pure_convection_source, periodic, 3, -1.0, UCCD, 0.1 / 2 ** 9)
+        print(2 ** i, data[2 ** i])
+    print("---Negative speed---")
+    find_order(data)
+
+    data = {}
+    for i in range(5, 10):
         data[2 ** i] = run(2 ** i, pure_convection_source, periodic, 3, 1.0, UCCD, 0.1 / 2 ** 9)
         print(2**i, data[2**i])
     print("---Positive speed---")

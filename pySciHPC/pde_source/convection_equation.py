@@ -7,6 +7,7 @@ from numba import int32, njit
 from pySciHPC.cuda_solvers.derivatives_solver import CudaDerivativesSolver
 from pySciHPC.functions.derivatives import find_fx, find_fy, find_fz
 from pySciHPC.objects.base import Scalar, Vector
+from .kernel_functions import neg_multi_sum_init, neg_multi_sum
 
 
 @njit(parallel=True, fastmath=True, nogil=True)
@@ -20,16 +21,10 @@ def pure_convection_source(f: np.ndarray, grids: np.ndarray, ghc: int32, ndim: i
     return -s
 
 
-multi_sum_init = cp.ElementwiseKernel('float64 a, float64 b', 'float64 c',
-                                      'c = - a * b', 'multi_sum_init', no_return=True)
-multi_sum = cp.ElementwiseKernel('float64 a, float64 b', 'float64 c',
-                                 'c = c - a * b', 'multi_sum', no_return=True)
-
-
 def cuda_pure_convection_source(f: Scalar, geo: Scalar, vel: Vector, solver: CudaDerivativesSolver, s: cp.ndarray,
                                 *args):
-    multi_sum_init(solver.find_fx(f.data.gpu[0], vel.x.data.gpu[0]), vel.x.data.gpu[0], s)
+    neg_multi_sum_init(solver.find_fx(f.data.gpu[0], vel.x.data.gpu[0]), vel.x.data.gpu[0], s)
     if f.ndim > 1:
-        multi_sum(solver.find_fy(f.data.gpu[0], vel.y.data.gpu[0]), *vel.y.data.gpu[0], s)
+        neg_multi_sum(solver.find_fy(f.data.gpu[0], vel.y.data.gpu[0]), *vel.y.data.gpu[0], s)
     if f.ndim > 2:
-        multi_sum(solver.find_fz(f.data.gpu[0], vel.z.data.gpu[0]), *vel.z.data.gpu[0], s)
+        neg_multi_sum(solver.find_fz(f.data.gpu[0], vel.z.data.gpu[0]), *vel.z.data.gpu[0], s)

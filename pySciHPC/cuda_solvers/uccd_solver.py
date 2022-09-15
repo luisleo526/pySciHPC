@@ -38,7 +38,7 @@ def src_bc(f, dx, s, ss):
 
 
 @cuda.jit
-def assign_src(f, dx, s, ss):
+def assign_src_upwind(f, dx, s, ss):
     c3 = -0.06096119008109
     c2 = 1.99692238016218
     c1 = -1.93596119008109
@@ -47,6 +47,19 @@ def assign_src(f, dx, s, ss):
 
     if i > 0 and i < f.size:
         s[i] = (c1 * f[i - 1] + c2 * f[i] + c3 * f[i + 1]) / dx[i]
+        ss[i] = (3.0 * f[i - 1] - 6.0 * f[i] + 3.0 * f[i + 1]) / dx[i] ** 2
+
+
+@cuda.jit
+def assign_src_downwind(f, dx, s, ss):
+    c3 = -0.06096119008109
+    c2 = 1.99692238016218
+    c1 = -1.93596119008109
+
+    i = cuda.grid(1)
+
+    if i > 0 and i < f.size:
+        s[i] = -(c3 * f[i - 1] + c2 * f[i] + c1 * f[i + 1]) / dx[i]
         ss[i] = (3.0 * f[i - 1] - 6.0 * f[i] + 3.0 * f[i + 1]) / dx[i] ** 2
 
 
@@ -93,13 +106,17 @@ class CudaUCCDSovler(CudaDerivativesSolver):
     def find_fx(self, f: cp.ndarray, c: cp.ndarray):
         for j in range(f.shape[1]):
             for k in range(f.shape[2]):
-                assign_src[(self.grid_dim[0]), (self.block_dim[0])](f[:, j, k], self.dx[:, j, k], self.sx, self.ssx)
+                assign_src_upwind[(self.grid_dim[0]), (self.block_dim[0])](
+                    f[:, j, k], self.dx[:, j, k], self.sx,self.ssx)
                 src_bc(f[:, j, k], self.grids[0], self.sx, self.ssx)
                 cp.concatenate((self.sx, self.ssx), out=self.bx)
-
                 cp.dot(self.Ax[0], self.bx, out=self.sol_x)
                 cp.take(self.sol_x, indices=self.indices_x, out=self.fx[:, j, k])
 
+                assign_src_downwind[(self.grid_dim[0]), (self.block_dim[0])](
+                    f[:, j, k], self.dx[:, j, k], self.sx,self.ssx)
+                src_bc(f[:, j, k], self.grids[0], self.sx, self.ssx)
+                cp.concatenate((self.sx, self.ssx), out=self.bx)
                 cp.dot(self.Ax[1], self.bx, out=self.sol_x)
                 cp.take(self.sol_x, indices=self.indices_x, out=self.buffer[:, j, k])
 
@@ -111,14 +128,17 @@ class CudaUCCDSovler(CudaDerivativesSolver):
         if self.ndim > 1:
             for i in range(f.shape[0]):
                 for k in range(f.shape[2]):
-                    assign_src[(self.grid_dim[1]), (self.block_dim[1])](f[i, :, k], self.dy[i, :, k], self.sy, self.ssy)
+                    assign_src_upwind[(self.grid_dim[1]), (self.block_dim[1])](
+                        f[i, :, k], self.dy[i, :, k], self.sy, self.ssy)
                     src_bc(f[i, :, k], self.grids[1], self.sy, self.ssy)
-
                     cp.concatenate((self.sy, self.ssy), out=self.by)
-
                     cp.dot(self.Ay[0], self.by, out=self.sol_y)
                     cp.take(self.sol_y, indices=self.indices_y, out=self.fx[i, :, k])
 
+                    assign_src_downwind[(self.grid_dim[1]), (self.block_dim[1])](
+                        f[i, :, k], self.dy[i, :, k], self.sy, self.ssy)
+                    src_bc(f[i, :, k], self.grids[1], self.sy, self.ssy)
+                    cp.concatenate((self.sy, self.ssy), out=self.by)
                     cp.dot(self.Ay[1], self.by, out=self.sol_y)
                     cp.take(self.sol_y, indices=self.indices_y, out=self.buffer[i, :, k])
 
@@ -132,14 +152,17 @@ class CudaUCCDSovler(CudaDerivativesSolver):
         if self.ndim > 2:
             for i in range(f.shape[0]):
                 for j in range(f.shape[1]):
-                    assign_src[(self.grid_dim[2]), (self.block_dim[2])](f[i, j, :], self.dz[i, j, :], self.sz, self.ssz)
+                    assign_src_upwind[(self.grid_dim[2]), (self.block_dim[2])](
+                        f[i, j, :], self.dz[i, j, :], self.sz, self.ssz)
                     src_bc(f[i, j, :], self.grids[2], self.sz, self.ssz)
-
                     cp.concatenate((self.sz, self.ssz), out=self.bz)
-
                     cp.dot(self.Az[0], self.bz, out=self.sol_z)
                     cp.take(self.sol_z, indices=self.indices_z, out=self.fx[i, j, :])
 
+                    assign_src_upwind[(self.grid_dim[2]), (self.block_dim[2])](
+                        f[i, j, :], self.dz[i, j, :], self.sz, self.ssz)
+                    src_bc(f[i, j, :], self.grids[2], self.sz, self.ssz)
+                    cp.concatenate((self.sz, self.ssz), out=self.bz)
                     cp.dot(self.Az[1], self.bz, out=self.sol_z)
                     cp.take(self.sol_z, indices=self.indices_z, out=self.buffer[i, j, :])
 

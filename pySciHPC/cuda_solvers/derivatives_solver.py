@@ -25,6 +25,8 @@ class CudaDerivativesSolver:
         self.src_buffer1 = cp.zeros(shape, dtype='float64')
         self.src_buffer2 = cp.zeros(shape, dtype='float64')
 
+        self.sol_buffer0 = cp.zeros(shape, dtype='float64')
+
     def find_fx(self, f: cp.ndarray, c: cp.ndarray):
         return NotImplemented
 
