@@ -12,10 +12,10 @@ class CudaDerivativesSolver:
         self.fx = cp.zeros(shape, dtype='float64')
         self.fxx = cp.zeros(shape, dtype='float64')
 
-        self.dx = cp.ones(shape, dtype='float64') * grids[0]
-        self.dy = cp.ones(shape, dtype='float64') * grids[1]
-        self.dz = cp.ones(shape, dtype='float64') * grids[2]
-        self.dt = cp.ones(shape, dtype='float64') * dt
+        self.dx = cp.full(shape, grids[0], dtype=float)
+        self.dy = cp.full(shape, grids[1], dtype=float)
+        self.dz = cp.full(shape, grids[2], dtype=float)
+        self.dt = cp.full(shape, dt, dtype=float)
 
         self.block_dim = threadsperblock
         self.grid_dim = blockpergrid

@@ -6,7 +6,7 @@ from numba import cuda
 from scipy.sparse import bmat, diags
 from scipy.sparse.linalg import inv
 
-from pySciHPC.scheme.spatial.UCCD import UCCD_coeffs
+from pySciHPC.core.scheme.spatial.UCCD import UCCD_coeffs
 from .derivatives_solver import CudaDerivativesSolver
 
 

@@ -5,6 +5,7 @@ import numpy as np
 from numba import cuda
 
 from .derivatives_solver import CudaDerivativesSolver
+from pySciHPC.cuda.kernels import assign_zero
 
 
 @cuda.jit(device=True)
@@ -206,9 +207,13 @@ class CudaWENOSolver(CudaDerivativesSolver):
                  blockpergrid: Tuple[int]):
 
         super().__init__(shape, grids, dt, ndim, threadsperblock, blockpergrid)
-        self.fh = cp.zeros_like(self.zero_buffer)
-        self.fp = cp.zeros_like(self.zero_buffer)
-        self.fm = cp.zeros_like(self.zero_buffer)
+        self.fh = cp.zeros_like(self.zero_buffer, dtype=float)
+        self.fp = cp.zeros_like(self.zero_buffer, dtype=float)
+        self.fm = cp.zeros_like(self.zero_buffer, dtype=float)
+        self.gp = cp.zeros_like(self.zero_buffer, dtype=float)
+        self.gm = cp.zeros_like(self.zero_buffer, dtype=float)
+        self.hp = cp.zeros_like(self.zero_buffer, dtype=float)
+        self.hm = cp.zeros_like(self.zero_buffer, dtype=float)
 
     def find_fx(self, f: cp.ndarray, c: cp.ndarray):
         weno_js_x[self.grid_dim, self.block_dim](f, self.fp, self.fm)
@@ -218,7 +223,7 @@ class CudaWENOSolver(CudaDerivativesSolver):
 
     def find_fy(self, f: cp.ndarray, c: cp.ndarray):
         if self.ndim > 1:
-            weno_js_y[self.grid_dim, self.block_dim](f, self.fp, self.fm)
+            weno_js_y[self.grid_dim, self.block_dim](f, self.gp, self.gm)
             find_flux[self.grid_dim, self.block_dim](self.fh, self.fp, self.fm, c)
             fy_from_flux[self.grid_dim, self.block_dim](self.fh, self.fx, self.dy)
             return self.fx
@@ -227,9 +232,22 @@ class CudaWENOSolver(CudaDerivativesSolver):
 
     def find_fz(self, f: cp.ndarray, c: cp.ndarray):
         if self.ndim > 2:
-            weno_js_z[self.grid_dim, self.block_dim](f, self.fp, self.fm)
+            weno_js_z[self.grid_dim, self.block_dim](f, self.hp, self.hm)
             find_flux[self.grid_dim, self.block_dim](self.fh, self.fp, self.fm, c)
             fz_from_flux[self.grid_dim, self.block_dim](self.fh, self.fx, self.dz)
             return self.fx
         else:
             return self.zero_buffer
+
+    def find_cellface(self, f: cp.ndarray):
+        weno_js_x[self.grid_dim, self.block_dim](f, self.fp, self.fm)
+        if self.ndim > 1:
+            weno_js_y[self.grid_dim, self.block_dim](f, self.gp, self.gm)
+        else:
+            assign_zero(self.gp)
+            assign_zero(self.gm)
+        if self.ndim > 2:
+            weno_js_z[self.grid_dim, self.block_dim](f, self.hp, self.hm)
+        else:
+            assign_zero(self.hp)
+            assign_zero(self.hm)

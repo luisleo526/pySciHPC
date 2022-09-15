@@ -6,13 +6,13 @@ import time
 import numpy as np
 from numba import config
 
-from pySciHPC import solve_hyperbolic
-from pySciHPC.boundary_conditions import cuda_periodic
-from pySciHPC.cuda_solvers.uccd_solver import CudaUCCDSovler
+from pySciHPC.cuda import solve_hyperbolic
+from pySciHPC.cuda.boundary_conditions.periodic import cuda_periodic
+from pySciHPC.cuda.solvers.uccd_solver import CudaUCCDSovler
 from pySciHPC.objects import Scalar, Vector
-from pySciHPC.pde_source.convection_equation import cuda_pure_convection_source
-from pySciHPC.scheme.temporal import cuda_rk3
-from pySciHPC.utils import find_order, l2_norm
+from pySciHPC.cuda.pde_source.convection import cuda_pure_convection_source
+from pySciHPC.cuda.scheme.temporal.Runge_Kutta import cuda_rk3
+from pySciHPC.core.utils import find_order, l2_norm
 
 
 def run(N, source, bc, ghc, c, scheme, dt):
@@ -35,7 +35,7 @@ def run(N, source, bc, ghc, c, scheme, dt):
     cpu_time = -time.time()
     while t < 2.0:
         t += dt
-        solve_hyperbolic(phi, vel, geo, cuda_rk3, bc, source, dt, solver)
+        solve_hyperbolic(phi, vel, geo, cuda_rk3, bc, source, solver)
         # print(t)
 
     phi.to_host()

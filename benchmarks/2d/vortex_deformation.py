@@ -4,17 +4,17 @@ sys.path.insert(0, '../../')
 import numpy as np
 from numba import set_num_threads
 
-from pySciHPC.boundary_conditions import zero_order
-from pySciHPC.functions.gradients import CCD_grad
+from pySciHPC.core.boundary_conditions import zero_order
+from pySciHPC.core.functions.gradients import CCD_grad
 from pySciHPC.objects import LevelSetFunction
 from pySciHPC.objects import Scalar, Vector
-from pySciHPC.pde_source.convection_equation import pure_convection_source
-from pySciHPC.pde_source.mass_preserving_level_set import mpls_source, mpls_criterion
-from pySciHPC.scheme.spatial import UCCD
-from pySciHPC.scheme.temporal import rk3
-from pySciHPC.utils import VTKPlotter
-from pySciHPC.utils import l2_norm
-from pySciHPC import solve_hyperbolic, solve_hyperbolic_steady
+from pySciHPC.core.pde_source.convection_equation import pure_convection_source
+from pySciHPC.core.pde_source.mass_preserving_level_set import mpls_source, mpls_criterion
+from pySciHPC.core.scheme.spatial import UCCD
+from pySciHPC.core.scheme.temporal import rk3
+from pySciHPC.core.utils import VTKPlotter
+from pySciHPC.core.utils import l2_norm
+from pySciHPC.core import solve_hyperbolic, solve_hyperbolic_steady
 
 if __name__ == "__main__":
 

@@ -4,7 +4,7 @@ from munch import Munch
 from math import ceil
 
 
-class CuArray:
+class Bridge:
     def __init__(self, data, use_cuda=False):
         self.cpu = np.copy(data)
         self.use_cuda = use_cuda
@@ -35,19 +35,19 @@ class Scalar:
 
         if not no_axis:
             axis_data = np.array(axis_data, dtype=np.dtype('float64, float64'))
-            self.x = CuArray(np.linspace(*axis_data[0], num=self.shape[0]), use_cuda)
+            self.x = Bridge(np.linspace(*axis_data[0], num=self.shape[0]), use_cuda)
             self.dx = self.x.cpu[1] - self.x.cpu[0]
 
-            self.y = CuArray(np.linspace(*axis_data[1], num=self.shape[1] if self.shape[1] > 1 else 2), use_cuda)
+            self.y = Bridge(np.linspace(*axis_data[1], num=self.shape[1] if self.shape[1] > 1 else 2), use_cuda)
             self.dy = self.y.cpu[1] - self.y.cpu[0]
 
-            self.z = CuArray(np.linspace(*axis_data[2], num=self.shape[2] if self.shape[2] > 1 else 2), use_cuda)
+            self.z = Bridge(np.linspace(*axis_data[2], num=self.shape[2] if self.shape[2] > 1 else 2), use_cuda)
             self.dz = self.z.cpu[1] - self.z.cpu[0]
             self.grids = np.array([self.dx, self.dy, self.dz], dtype='float64')
 
         array_shape = np.array(ghc_array, dtype=int) * 2 + self.shape
         if not no_data:
-            self.data = CuArray(
+            self.data = Bridge(
                 np.stack([np.zeros(array_shape, dtype=np.float64) for _ in range(num_of_data)]), use_cuda)
 
         self.threadsperblock = (threadsperblock, threadsperblock, threadsperblock)

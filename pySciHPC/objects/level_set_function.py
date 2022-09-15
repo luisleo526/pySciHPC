@@ -1,5 +1,5 @@
 from .base import Scalar
-from pySciHPC.functions.level_set import Heaviside
+from pySciHPC.core.functions.level_set import Heaviside
 import numpy as np
 from numba import float64, njit, prange, int32
 

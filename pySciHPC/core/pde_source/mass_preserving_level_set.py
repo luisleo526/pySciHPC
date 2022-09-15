@@ -1,12 +1,10 @@
 from typing import Callable
 
 import numpy as np
-from numba import int32, float64, njit, prange
+from numba import int32, float64, njit
 
-from pySciHPC.boundary_conditions import zero_order
-from pySciHPC.functions.level_set import Heaviside, Delta
+from pySciHPC.core.functions.level_set import Heaviside, Delta
 from pySciHPC.objects.level_set_function import find_mass_vol
-from pySciHPC.utils import l2_norm
 
 
 @njit(parallel=True, fastmath=True, nogil=True)

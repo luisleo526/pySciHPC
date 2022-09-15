@@ -1,11 +1,8 @@
 import numpy as np
 from numba import njit, float64, int32, prange
 
-from pySciHPC.utils.matrix_solver import twin_dec, twin_bks
+from pySciHPC.core.utils.matrix_solver import twin_dec, twin_bks
 from .CCD import CCD_coeffs_bc
-
-from scipy.sparse import bmat, diags
-from scipy.sparse.linalg import spsolve
 
 FORMAT = 'csr'
 

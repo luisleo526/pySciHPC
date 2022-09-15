@@ -8,20 +8,20 @@ import numpy as np
 from numba import config
 from numba import float64, njit
 
-from pySciHPC import solve_hyperbolic
-from pySciHPC.boundary_conditions import cuda_periodic
-from pySciHPC.cuda_solvers import CudaUCCDSovler, CudaDerivativesSolver
+from pySciHPC.cuda import solve_hyperbolic
+from pySciHPC.cuda.boundary_conditions.periodic import cuda_periodic
+from pySciHPC.cuda.solvers import CudaUCCDSovler, CudaDerivativesSolver
 from pySciHPC.objects import Scalar, Vector
-from pySciHPC.scheme.temporal import cuda_rk3
-from pySciHPC.utils import find_order, l2_norm
+from pySciHPC.cuda.scheme.temporal import cuda_rk3
+from pySciHPC.core.utils import find_order, l2_norm
 
 burger_flux = cp.ElementwiseKernel('float64 f', 'float64 ff', 'ff = f * f * 0.5', 'burger_flux')
-assign = cp.ElementwiseKernel('float64 f', 'float64 ff', 'ff = -f', 'assign', no_return=True)
+neg_assign = cp.ElementwiseKernel('float64 f', 'float64 ff', 'ff = -f', 'neg_assign', no_return=True)
 
 
 def cuda_inviscid_burger(f: Scalar, geo: Scalar, vel: Vector, solver: CudaDerivativesSolver, s: cp.ndarray,
                          *args):
-    assign(solver.find_fx(burger_flux(f.data.gpu[0], solver.sol_buffer0), vel.x.data.gpu[0]), s)
+    neg_assign(solver.find_fx(burger_flux(f.data.gpu[0], solver.sol_buffer0), vel.x.data.gpu[0]), s)
 
 
 @njit(float64[:](float64[:], float64, float64), parallel=True, fastmath=True, nogil=True)
@@ -53,7 +53,7 @@ def run(N, source, bc, ghc, ts, scheme, dt):
     cpu_time = -time.time()
     while t < 0.75 * ts:
         t += dt
-        solve_hyperbolic(phi, vel, geo, cuda_rk3, bc, source, dt, solver)
+        solve_hyperbolic(phi, vel, geo, cuda_rk3, bc, source, solver)
 
     phi.to_host()
 
@@ -66,9 +66,9 @@ if __name__ == "__main__":
     config.THREADING_LAYER = 'threadsafe'
 
     data = {}
-    for i in range(5, 8):
+    for i in range(5, 11):
         N = 2 ** i
-        data[N] = run(N, cuda_inviscid_burger, cuda_periodic, 3, 2.0, CudaUCCDSovler, 0.1 / 2 ** 7)
+        data[N] = run(N, cuda_inviscid_burger, cuda_periodic, 3, 2.0, CudaUCCDSovler, 0.1 / 2 ** 10)
         print(N, data[N])
     print("---Positive speed---")
     find_order(data)
