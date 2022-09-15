@@ -1,6 +1,6 @@
 import sys
 
-sys.path.insert(0, '../../pySciHPC')
+sys.path.insert(0, '../../')
 import numpy as np
 from numba import set_num_threads
 
