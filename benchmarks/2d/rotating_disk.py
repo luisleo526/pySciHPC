@@ -20,8 +20,8 @@ if __name__ == "__main__":
 
     period = 2.0 * np.pi
 
-    phi.core = as_density_2d(phi, geo, ["(x-0.5)**2+(y-0.75)**2 <=0.15**2",
-                                        ["not (abs(x - 0.5) <= 0.025 and y < 0.75 + 0.15 / 2)"]])
+    initial_condition = ["(x-0.5)**2+(y-0.75)**2 <=0.15**2", ["not (abs(x - 0.5) <= 0.025 and y < 0.75 + 0.15 / 2)"]]
+    as_density_2d(phi, geo, initial_condition)
 
     vel.x.core = -2.0 * np.pi / period * (geo.mesh.y - 0.5)
     vel.y.core = 2.0 * np.pi / period * (geo.mesh.x - 0.5)
