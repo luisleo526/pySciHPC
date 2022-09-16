@@ -4,10 +4,8 @@ sys.path.insert(0, '../../')
 
 from pySciHPC.core.boundary_conditions import zero_order
 from pySciHPC.core.data import Scalar
-from pySciHPC.core.level_set_method import LevelSetFunction, solve_redistance
+from pySciHPC.level_set_method import LevelSetFunction, solve_redistance
 from pySciHPC.utils.plotter import VTKPlotter
-
-import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
     geo_dict = dict(_size=[64, 128], ghc=3, _axis_data=[(0.0, 1.0), (0.0, 1.0)])

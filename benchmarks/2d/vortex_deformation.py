@@ -5,11 +5,9 @@ import numpy as np
 from numba import set_num_threads
 
 from pySciHPC.core.boundary_conditions import zero_order
-from pySciHPC.core.functions.gradients import CCD_grad
-from pySciHPC.core.level_set_method import LevelSetFunction
+from pySciHPC.level_set_method import LevelSetFunction, solve_mpls
 from pySciHPC.core.data import Scalar, Vector
 from pySciHPC.core.pde_source.convection_equation import pure_convection_source
-from pySciHPC.core.pde_source.mass_preserving_level_set import mpls_source, mpls_criterion
 from pySciHPC.core.scheme.spatial import UCCD
 from pySciHPC.core.scheme.temporal import rk3
 from pySciHPC.utils.plotter import VTKPlotter
@@ -18,16 +16,14 @@ from pySciHPC.core import solve_hyperbolic
 
 if __name__ == "__main__":
 
-    set_num_threads(16)
-
-    geo_dict = dict(_size=[32, 64], ghc=3, _axis_data=[(0.0, 1.0), (0.0, 1.0)], num_of_data=1)
+    geo_dict = dict(_size=[32, 32], ghc=3, _axis_data=[(0.0, 1.0), (0.0, 1.0)], num_of_data=1)
     geo = Scalar(**geo_dict, no_data=True)
     ls_dict = dict(interface_width=1.5 * geo.dx, density_ratio=1.0)
     phi = LevelSetFunction(**geo_dict, no_axis=True, **ls_dict)
     vel = Vector(**geo_dict)
     plotter = VTKPlotter(geo, "Vortex2D")
 
-    dt = 0.1 * geo.dx
+    dt = 0.1 * geo.h
     period = 4.0
 
     t = 0.0
@@ -41,7 +37,7 @@ if __name__ == "__main__":
     plotter.add_vector(vel.core, "velocity")
     plotter.close()
 
-    phi.snap(np.product(geo.grids[:geo.ndim]))
+    phi.snap()
 
     vel.x.core = np.sin(np.pi * geo.mesh.x) ** 2 * np.sin(2.0 * np.pi * geo.mesh.y) * np.cos(np.pi * t / period)
     vel.y.core = -np.sin(np.pi * geo.mesh.y) ** 2 * np.sin(2.0 * np.pi * geo.mesh.x) * np.cos(np.pi * t / period)
@@ -52,12 +48,12 @@ if __name__ == "__main__":
     while t < period:
 
         solve_hyperbolic(phi, vel, geo, rk3, zero_order, pure_convection_source, dt, UCCD)
-        solve_hyperbolic_steady(phi, vel, geo, rk3, zero_order, mpls_source, 1.0, None, mpls_criterion, 1.0e-10, 0.0,
-                                CCD_grad, phi.interface_width, phi.mass[0], phi.density_ratio)
+        solve_mpls(phi)
+        phi.snap()
 
         if cnt % 5 == 0:
             print(f"time: {t}")
-            phi.print_error(np.product(geo.grids[:geo.ndim]))
+            phi.print_error()
             print("=" * 30)
 
         t = t + dt

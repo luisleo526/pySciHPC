@@ -33,25 +33,27 @@ class Scalar:
 
         self.shape = np.array(size, dtype=int)
 
-        if not no_axis:
-            axis_data = np.array(axis_data, dtype=np.dtype('float64, float64'))
-            self.x = Bridge(np.linspace(*axis_data[0], num=self.shape[0]), use_cuda)
-            self.dx = self.x.cpu[1] - self.x.cpu[0]
+        axis_data = np.array(axis_data, dtype=np.dtype('float64, float64'))
+        self.x = Bridge(np.linspace(*axis_data[0], num=self.shape[0]), use_cuda)
+        self.dx = self.x.cpu[1] - self.x.cpu[0]
 
-            self.y = Bridge(np.linspace(*axis_data[1], num=self.shape[1] if self.shape[1] > 1 else 2), use_cuda)
-            self.dy = self.y.cpu[1] - self.y.cpu[0]
+        self.y = Bridge(np.linspace(*axis_data[1], num=self.shape[1] if self.shape[1] > 1 else 2), use_cuda)
+        self.dy = self.y.cpu[1] - self.y.cpu[0]
 
-            self.z = Bridge(np.linspace(*axis_data[2], num=self.shape[2] if self.shape[2] > 1 else 2), use_cuda)
-            self.dz = self.z.cpu[1] - self.z.cpu[0]
-            self.grids = np.array([self.dx, self.dy, self.dz], dtype='float64')
+        self.z = Bridge(np.linspace(*axis_data[2], num=self.shape[2] if self.shape[2] > 1 else 2), use_cuda)
+        self.dz = self.z.cpu[1] - self.z.cpu[0]
+        self.grids = np.array([self.dx, self.dy, self.dz], dtype='float64')
 
-            self.h = min(self.grids[:self.ndim])
+        self.h = min(self.grids[:self.ndim])
+        self.dv = np.product(self.grids[:self.ndim])
 
         array_shape = np.array(ghc_array, dtype=int) * 2 + self.shape
         if not no_data:
             self.data = Bridge(
                 np.stack([np.zeros(array_shape, dtype=np.float64) for _ in range(num_of_data)]), use_cuda)
-            self.buffer = np.zeros(array_shape, dtype=np.float64)
+
+        if no_axis:
+            del self.x, self.y, self.z
 
         self.threadsperblock = (threadsperblock, threadsperblock, threadsperblock)
         self.blockspergrid = tuple([int(ceil(array_shape[i] / self.threadsperblock[i])) for i in range(3)])
@@ -121,6 +123,7 @@ class Vector:
         self.ghc = self.x.ghc
         self.ndim = self.x.ndim
         self.shape = self.x.shape
+        self.grids = self.x.grids
 
         if self.ndim > 1:
             self.y = Scalar(_size, ghc, _axis_data, num_of_data, no_axis=True, no_data=False, use_cuda=use_cuda,
