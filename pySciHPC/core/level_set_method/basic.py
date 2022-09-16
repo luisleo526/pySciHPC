@@ -1,5 +1,6 @@
 import numpy as np
 from numba import njit, float64, prange, int32
+from pySciHPC.utils.utils import l2_norm
 
 
 @njit(float64[:, :, :](float64[:, :, :], float64), fastmath=True, parallel=True, nogil=True)
@@ -19,7 +20,18 @@ def Heaviside(x, eta):
 
 @njit(float64[:, :, :](float64[:, :, :], float64), fastmath=True, parallel=True, nogil=True)
 def Sign(x, eta):
-    return Heaviside(x, eta) * 2.0 - 1.0
+    sign = np.zeros_like(x)
+    for i in prange(x.shape[0]):
+        for j in prange(x.shape[1]):
+            for k in prange(x.shape[2]):
+                if x[i, j, k] > 0.0:
+                    sign[i, j, k] = 1.0
+                else:
+                    sign[i, j, k] = -1.0
+                if abs(x[i, j, k]) < 1.0e-14:
+                    sign[i, j, k] = 0.0
+
+    return sign
 
 
 @njit(float64[:, :, :](float64[:, :, :], float64), fastmath=True, parallel=True, nogil=True)
@@ -53,3 +65,10 @@ def find_mass_vol(x, eta, density, dv, ndim, ghc):
                     vol += h[i, j, k] * dv
                     mass += h[i, j, k] * (h[i, j, k] + (1.0 - h[i, j, k]) * density) * dv
     return np.array([vol, mass], dtype='float64')
+
+
+@njit(float64(float64[:, :, :], float64[:, :, :], float64), fastmath=True, nogil=True)
+def inteface_error(f: np.ndarray, g: np.ndarray, interface_width: float):
+    h1 = Heaviside(f, interface_width)
+    h2 = Heaviside(g, interface_width)
+    return l2_norm(h1, h2)

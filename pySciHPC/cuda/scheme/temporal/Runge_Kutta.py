@@ -1,8 +1,8 @@
 from typing import Callable
 
-from pySciHPC import Scalar, Vector
-from pySciHPC.cuda.solvers import CudaDerivativesSolver
-from pySciHPC.cuda.kernels import rk3_1, rk3_2, rk3_3
+from ...kernels import rk3_1, rk3_2, rk3_3
+from ...solvers import CudaDerivativesSolver
+from ....core.data import Scalar, Vector
 
 
 def cuda_rk3(f: Scalar, geo: Scalar, vel: Vector, source: Callable, boundary_condition: Callable,

@@ -1,8 +1,8 @@
 import cupy as cp
 
-from pySciHPC import Scalar, Vector
-from pySciHPC.cuda.solvers import CudaDerivativesSolver
-from pySciHPC.cuda.kernels import neg_multi_sum_init, neg_multi_sum
+from ...core.data import Scalar, Vector
+from ..solvers import CudaDerivativesSolver
+from ..kernels import neg_multi_sum_init, neg_multi_sum
 
 
 def cuda_pure_convection_source(f: Scalar, geo: Scalar, vel: Vector, solver: CudaDerivativesSolver, s: cp.ndarray,

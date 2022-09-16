@@ -6,8 +6,8 @@ from numba import cuda
 from scipy.sparse import bmat, diags
 from scipy.sparse.linalg import inv
 
-from pySciHPC.core.scheme.spatial.UCCD import UCCD_coeffs
 from .derivatives_solver import CudaDerivativesSolver
+from ...core.scheme.spatial.UCCD import UCCD_coeffs
 
 
 def make_inverse(n: int, dx: float):

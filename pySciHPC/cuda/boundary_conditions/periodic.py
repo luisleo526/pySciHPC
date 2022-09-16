@@ -1,4 +1,4 @@
-from pySciHPC import Scalar
+from ...core.data import Scalar
 
 
 def cuda_periodic(f: Scalar, geo: Scalar):

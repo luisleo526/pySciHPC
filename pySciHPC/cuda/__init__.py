@@ -1,7 +1,7 @@
 from typing import Callable
 
-from pySciHPC.core.data import Scalar, Vector
-from pySciHPC.cuda.solvers import CudaDerivativesSolver
+from .solvers import CudaDerivativesSolver
+from ..core.data import Scalar, Vector
 
 
 def solve_hyperbolic(f: Scalar, c: Vector, geo: Scalar, temporal: Callable, bc: Callable, source: Callable,

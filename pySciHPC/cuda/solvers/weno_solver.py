@@ -5,7 +5,7 @@ import numpy as np
 from numba import cuda
 
 from .derivatives_solver import CudaDerivativesSolver
-from pySciHPC.cuda.kernels import assign_zero
+from ..kernels import assign_zero
 
 
 @cuda.jit(device=True)

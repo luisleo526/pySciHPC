@@ -4,7 +4,20 @@ from numba import int32, float64, njit, prange
 from ..boundary_conditions.zero_order import zero_order_x, zero_order_y, zero_order_z, zero_order
 from ..functions.derivatives import find_fx, find_fy, find_fz
 from ..scheme.spatial.CCD import CCD
-from ..scheme.spatial.ENO import WENO_p, WENO_m, WENO_weights_JS
+
+
+@njit(float64(float64, float64, float64, float64))
+def phyn(a, b, c, d):
+    eps = 1.0e-8
+    is0 = 13.0 * (a - b) ** 2.0 + 3.0 * (a - 3.0 * b) ** 2.0
+    is1 = 13.0 * (b - c) ** 2.0 + 3.0 * (b + c) ** 2.0
+    is2 = 13.0 * (c - d) ** 2.0 + 3.0 * (3.0 * c - d) ** 2.0
+    alp0 = 1.0 / (eps + is0) ** 2.0
+    alp1 = 6.0 / (eps + is1) ** 2.0
+    alp2 = 3.0 / (eps + is2) ** 2.0
+    w0 = alp0 / (alp0 + alp1 + alp2)
+    w2 = alp2 / (alp0 + alp1 + alp2)
+    return w0 / 3.0 * (a - 2.0 * b + c) + (w2 - 0.5) / 6.0 * (b - 2.0 * c + d)
 
 
 @njit(float64[:, :, :](float64[:, :, :], float64[:], int32, int32), parallel=True, fastmath=True, nogil=True)
@@ -22,50 +35,62 @@ def godunov_wenojs(f: np.ndarray, grids: np.ndarray, ghc: int32, ndim: int32):
     wp = np.zeros_like(f)
     wm = np.zeros_like(f)
 
-    df = np.zeros_like(f)
-    for j in prange(f.shape[1]):
-        for k in prange(f.shape[2]):
-            for i in prange(1, f.shape[0]):
-                df[i, j, k] = (f[i, j, k] - f[i - 1, j, k]) / dx
-    zero_order_x(df, ghc)
     for j in prange(f.shape[1]):
         for k in prange(f.shape[2]):
             for i in prange(ghc, f.shape[0] - ghc):
-                up[i, j, k] = WENO_p(df[i - 1, j, k], df[i, j, k], df[i + 1, j, k], df[i + 2, j, k], df[i + 3, j, k],
-                                     WENO_weights_JS)
-                um[i, j, k] = WENO_m(df[i - 2, j, k], df[i - 1, j, k], df[i, j, k], df[i + 1, j, k], df[i + 2, j, k],
-                                     WENO_weights_JS)
+                v = 1.0 / (12.0 * dx) * (-(f[i - 1, j, k] - f[i - 2, j, k])
+                                         + 7.0 * (f[i, j, k] - f[i - 1, j, k])
+                                         + 7.0 * (f[i + 1, j, k] - f[i, j, k])
+                                         - (f[i + 2, j, k] - f[i + 1, j, k]))
+
+                up[i, j, k] = v + 1.0 / dx * phyn((f[i + 3, j, k] - 2.0 * f[i + 2, j, k] + f[i + 1, j, k]),
+                                                  (f[i + 2, j, k] - 2.0 * f[i + 1, j, k] + f[i, j, k]),
+                                                  (f[i + 1, j, k] - 2.0 * f[i, j, k] + f[i - 1, j, k]),
+                                                  (f[i, j, k] - 2.0 * f[i - 1, j, k] + f[i - 2, j, k]))
+                um[i, j, k] = v - 1.0 / dx * phyn((f[i - 3, j, k] - 2.0 * f[i - 2, j, k] + f[i - 1, j, k]),
+                                                  (f[i - 2, j, k] - 2.0 * f[i - 1, j, k] + f[i, j, k]),
+                                                  (f[i - 1, j, k] - 2.0 * f[i, j, k] + f[i + 1, j, k]),
+                                                  (f[i, j, k] - 2.0 * f[i + 1, j, k] + f[i + 2, j, k]))
+
     zero_order_x(up, ghc)
     zero_order_x(um, ghc)
 
     for i in prange(f.shape[0]):
         for k in prange(f.shape[2]):
-            for j in prange(1, f.shape[1]):
-                df[i, j, k] = (f[i, j, k] - f[i, j - 1, k]) / dy
-    zero_order_y(df, ghc)
-    for i in prange(f.shape[0]):
-        for k in prange(f.shape[2]):
             for j in prange(ghc, f.shape[1] - ghc):
-                vp[i, j, k] = WENO_p(df[i, j - 1, k], df[i, j, k], df[i, j + 1, k], df[i, j + 2, k],
-                                     df[i, j + 3, k], WENO_weights_JS)
-                vm[i, j, k] = WENO_m(df[i, j - 2, k], df[i, j - 1, k], df[i, j, k], df[i, j + 1, k],
-                                     df[i, j + 2, k], WENO_weights_JS)
+                v = 1.0 / (12.0 * dy) * (-(f[i, j - 1, k] - f[i, j - 2, k])
+                                         + 7.0 * (f[i, j, k] - f[i, j - 1, k])
+                                         + 7.0 * (f[i, j + 1, k] - f[i, j, k])
+                                         - (f[i, j + 2, k] - f[i, j + 1, k]))
+
+                vp[i, j, k] = v + 1.0 / dy * phyn((f[i, j + 3, k] - 2.0 * f[i, j + 2, k] + f[i, j + 1, k]),
+                                                  (f[i, j + 2, k] - 2.0 * f[i, j + 1, k] + f[i, j, k]),
+                                                  (f[i, j + 1, k] - 2.0 * f[i, j, k] + f[i, j - 1, k]),
+                                                  (f[i, j, k] - 2.0 * f[i, j - 1, k] + f[i, j - 2, k]))
+                vm[i, j, k] = v - 1.0 / dy * phyn((f[i, j - 3, k] - 2.0 * f[i, j - 2, k] + f[i, j - 1, k]),
+                                                  (f[i, j - 2, k] - 2.0 * f[i, j - 1, k] + f[i, j, k]),
+                                                  (f[i, j - 1, k] - 2.0 * f[i, j, k] + f[i, j + 1, k]),
+                                                  (f[i, j, k] - 2.0 * f[i, j + 1, k] + f[i, j + 2, k]))
     zero_order_y(vp, ghc)
     zero_order_y(vm, ghc)
 
     if ndim > 2:
         for i in prange(f.shape[0]):
             for j in prange(f.shape[1]):
-                for k in prange(f.shape[2]):
-                    df[i, j, k] = (f[i, j, k] - f[i, j, k - 1]) / dz
-        zero_order_z(df, ghc)
-        for i in prange(f.shape[0]):
-            for j in prange(f.shape[1]):
                 for k in prange(ghc, f.shape[2] - ghc):
-                    wp[i, j, k] = WENO_p(df[i, j, k - 1], df[i, j, k], df[i, j, k + 1], df[i, j, k + 2],
-                                         df[i, j, k + 3], WENO_weights_JS)
-                    wm[i, j, k] = WENO_m(df[i, j, k - 2], df[i, j, k - 1], df[i, j, k], df[i, j, k + 1],
-                                         df[i, j, k + 2], WENO_weights_JS)
+                    v = 1.0 / (12.0 * dz) * (-(f[i, j, k - 1] - f[i, j, k - 2])
+                                             + 7.0 * (f[i, j, k] - f[i, j, k - 1])
+                                             + 7.0 * (f[i, j, k + 1] - f[i, j, k])
+                                             - (f[i, j, k + 2] - f[i, j, k + 1]))
+
+                    wp[i, j, k] = v + 1.0 / dz * phyn((f[i, j, k + 3] - 2.0 * f[i, j, k + 2] + f[i, j, k + 1]),
+                                                      (f[i, j, k + 2] - 2.0 * f[i, j, k + 1] + f[i, j, k]),
+                                                      (f[i, j, k + 1] - 2.0 * f[i, j, k] + f[i, j, k - 1]),
+                                                      (f[i, j, k] - 2.0 * f[i, j, k - 1] + f[i, j, k - 2]))
+                    wm[i, j, k] = v - 1.0 / dz * phyn((f[i, j, k - 3] - 2.0 * f[i, j, k - 2] + f[i, j, k - 1]),
+                                                      (f[i, j, k - 2] - 2.0 * f[i, j, k - 1] + f[i, j, k]),
+                                                      (f[i, j, k - 1] - 2.0 * f[i, j, k] + f[i, j, k + 1]),
+                                                      (f[i, j, k] - 2.0 * f[i, j, k + 1] + f[i, j, k + 2]))
 
         zero_order_z(wp, ghc)
         zero_order_z(wm, ghc)

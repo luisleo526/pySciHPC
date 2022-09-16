@@ -5,8 +5,8 @@ from numba import njit
 from .level_set_function import LevelSetFunction
 from .basic import find_mass_vol, Heaviside, Delta
 from pySciHPC.core.scheme.temporal.Runge_Kutta import rk3
-from ..core.boundary_conditions import zero_order
-from ..core.functions.gradients import CCD_grad
+from pySciHPC.core.boundary_conditions import zero_order
+from pySciHPC.core.functions.gradients import CCD_grad
 
 
 @njit(parallel=True, fastmath=True, nogil=True)

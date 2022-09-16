@@ -2,23 +2,21 @@ import sys
 
 sys.path.insert(0, '../../')
 import numpy as np
-from numba import set_num_threads
 
 from pySciHPC.core.boundary_conditions import zero_order
-from pySciHPC.level_set_method import LevelSetFunction, solve_mpls
+from pySciHPC.core.level_set_method import LevelSetFunction, solve_mpls, inteface_error
 from pySciHPC.core.data import Scalar, Vector
 from pySciHPC.core.pde_source.convection_equation import pure_convection_source
 from pySciHPC.core.scheme.spatial import UCCD
 from pySciHPC.core.scheme.temporal import rk3
 from pySciHPC.utils.plotter import VTKPlotter
-from pySciHPC.utils.utils import l2_norm
 from pySciHPC.core import solve_hyperbolic
 
 if __name__ == "__main__":
 
     geo_dict = dict(_size=[32, 32], ghc=3, _axis_data=[(0.0, 1.0), (0.0, 1.0)], num_of_data=1)
     geo = Scalar(**geo_dict, no_data=True)
-    ls_dict = dict(interface_width=1.5 * geo.dx, density_ratio=1.0)
+    ls_dict = dict(interface_width=1.5 * geo.h, density_ratio=1.0)
     phi = LevelSetFunction(**geo_dict, no_axis=True, **ls_dict)
     vel = Vector(**geo_dict)
     plotter = VTKPlotter(geo, "Vortex2D")
@@ -29,7 +27,7 @@ if __name__ == "__main__":
     t = 0.0
 
     phi.core = -np.sqrt((geo.mesh.x - 0.5) ** 2 + (geo.mesh.y - 0.75) ** 2) + 0.15
-    ic = np.copy(phi.core)
+    ic = np.copy(phi.data.cpu[0])
     zero_order(phi.data.cpu[0], geo.ghc, geo.ndim)
 
     plotter.create()
@@ -72,4 +70,4 @@ if __name__ == "__main__":
 
     plotter.joins(dt * int(0.25 / dt))
 
-    print(l2_norm(ic, phi.core))
+    print(inteface_error(ic, phi.data.cpu[0]))

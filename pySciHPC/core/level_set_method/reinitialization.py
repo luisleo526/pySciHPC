@@ -1,19 +1,11 @@
 import numpy as np
-import pandas as pd
 from numba import njit, float64, int32, boolean, prange
 
-from .basic import Delta, Sign
-from .level_set_function import LevelSetFunction
 from pySciHPC.core.boundary_conditions import zero_order
-from pySciHPC.core.data import Scalar
 from pySciHPC.core.functions.gradients import godunov_wenojs
 from pySciHPC.core.scheme.temporal import rk3
-from pySciHPC.utils.utils import l2_norm
-
-
-@njit(float64[:, :, :](float64[:, :, :], float64[:, :, :], float64), parallel=True, fastmath=True, nogil=True)
-def sor_iterator(f: np.ndarray, g: np.ndarray, w: float):
-    return w * f + (1.0 - w) * g
+from .basic import Delta, Sign
+from .level_set_function import LevelSetFunction
 
 
 @njit(float64[:, :, :](float64[:, :, :], float64[:], int32, int32), fastmath=True, parallel=True, nogil=True)
@@ -61,9 +53,9 @@ def redistance_source(f: np.ndarray, grids: np.ndarray, ghc: int, ndim: int, sig
 
 
 def solve_redistance(phi: LevelSetFunction, period: float, cfl: float, init: bool):
+    sign0 = Sign(phi.data.cpu[0], phi.interface_width)
     if init:
         phi.data.cpu[0] = stabilize(phi.data.cpu[0], phi.grids, phi.ghc, phi.ndim)
-    sign0 = Sign(phi.data.cpu[0], phi.interface_width)
 
     dt = cfl * phi.h
     t = 0.0
@@ -73,7 +65,5 @@ def solve_redistance(phi: LevelSetFunction, period: float, cfl: float, init: boo
         tmp = np.copy(phi.data.cpu[0])
         phi.data.cpu[0] = rk3(dt, phi.data.cpu[0], phi.grids, phi.ghc, phi.ndim, redistance_source, zero_order, sign0,
                               phi.interface_width, init)
-        phi.data.cpu[0] = sor_iterator(phi.data.cpu[0], tmp, 0.5)
-
-        if np.amax(phi.data.cpu[0] - tmp) < 1.0e-7:
+        if np.amax(phi.data.cpu[0] - tmp) < 1.0e-10:
             break

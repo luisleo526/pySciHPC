@@ -1,8 +1,10 @@
-from uvw import RectilinearGrid, DataArray
-from pySciHPC.core.data import Scalar
-from pathlib import Path
-import numpy as np
 import json
+from pathlib import Path
+
+import numpy as np
+from uvw import RectilinearGrid, DataArray
+
+from ..core.data import Scalar
 
 
 class VTKPlotter:
