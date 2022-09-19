@@ -12,7 +12,7 @@ from pySciHPC.cuda.solvers.uccd_solver import CudaUCCDSovler
 from pySciHPC.core.data import Scalar, Vector
 from pySciHPC.cuda.pde_source.convection import cuda_pure_convection_source
 from pySciHPC.cuda.scheme.temporal.Runge_Kutta import cuda_rk3
-from pySciHPC.utils import find_order, l2_norm
+from pySciHPC.utils.utils import find_order, l2_norm
 
 
 def run(N, source, bc, ghc, c, scheme, dt):
@@ -25,17 +25,17 @@ def run(N, source, bc, ghc, c, scheme, dt):
     # phi.core = np.sin(np.pi * geo.mesh.x - np.sin(np.pi * geo.mesh.x) / np.pi)
     phi.core = np.sin(np.pi * geo.mesh.x)
     phi.to_device()
-    bc(phi, geo)
+    bc(phi)
 
     vel = Vector(**geo_dict)
-    vel.x.data.cpu[0] = np.ones_like(phi.data.cpu[0]) * c
+    vel.x.cell.cpu[0] = np.ones_like(phi.data.cpu[0]) * c
     vel.to_device()
 
     t = 0.0
     cpu_time = -time.time()
     while t < 2.0:
         t += dt
-        solve_hyperbolic(phi, vel, geo, cuda_rk3, bc, source, solver)
+        solve_hyperbolic(phi, vel, cuda_rk3, bc, source, solver)
         # print(t)
 
     phi.to_host()

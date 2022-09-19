@@ -57,7 +57,6 @@ def CCD_coeffs(N: int32, dx: float64):
         BB[2, i] = -1.0 / 8.0
 
     CCD_coeffs_bc(A, B, AA, BB, dx)
-    twin_dec(A, B, AA, BB)
 
     return np.stack((A, B, AA, BB))
 
@@ -83,6 +82,7 @@ def CCD_src(f: np.ndarray, N: int32, dx: float64):
 @njit(float64[:](float64[:], float64[:], float64), cache=True)
 def CCD(f: np.ndarray, c: np.ndarray, dx: float64):
     A, B, AA, BB = CCD_coeffs(f.size, dx)
+    twin_dec(A, B, AA, BB)
     S, SS = CCD_src(f, f.size, dx)
     fx, fxx = twin_bks(A, B, AA, BB, S, SS)
     return fx
@@ -91,6 +91,7 @@ def CCD(f: np.ndarray, c: np.ndarray, dx: float64):
 @njit(float64[:, :](float64[:], float64[:], float64), cache=True)
 def CCD_full(f: np.ndarray, c: np.ndarray, dx: float64):
     A, B, AA, BB = CCD_coeffs(f.size, dx)
+    twin_dec(A, B, AA, BB)
     S, SS = CCD_src(f, f.size, dx)
     fx, fxx = twin_bks(A, B, AA, BB, S, SS)
     return np.stack((fx, fxx))

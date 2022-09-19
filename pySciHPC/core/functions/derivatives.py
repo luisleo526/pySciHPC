@@ -1,10 +1,9 @@
 from typing import Callable
 
-import cupy as cp
 import numpy as np
 from numba import njit, float64, prange
 
-from ..data import Scalar, Vector
+from ..scheme.spatial.CCD import CCD_full
 
 
 @njit(parallel=True, fastmath=True, nogil=True)
@@ -37,31 +36,43 @@ def find_fz(f: np.ndarray, dz: float64, c: np.ndarray, scheme: Callable):
     return fz
 
 
-def cuda_find_fx(f: Scalar, geo: Scalar, vel: Vector, scheme: Callable, coeff, *args):
-    cuda_fx = cp.zeros_like(f.data.gpu[0])
-    if cuda_fx.shape[0] != 1:
-        for j in range(cuda_fx.shape[1]):
-            for k in range(cuda_fx.shape[2]):
-                cuda_fx[:, j, k] = scheme(f.data.gpu[0, :, j, k], vel.x.data.gpu[0, :, j, k],
-                                          geo.dx, f.blockspergrid[0], f.threadsperblock[0], coeff[0], *args)
-    return cuda_fx
+@njit(parallel=True, fastmath=True, nogil=True)
+def ccd_x(f: np.ndarray, dx: float64):
+    fx = np.zeros_like(f)
+    fxx = np.zeros_like(f)
+    buffer = np.zeros(f.shape[0])
+    if f.shape[0] != 1:
+        for j in prange(f.shape[1]):
+            for k in prange(f.shape[2]):
+                _fx, _fxx = CCD_full(f[:, j, k], buffer, dx)
+                fx[:, j, k] = _fx
+                fxx[:, j, k] = _fxx
+    return np.stack((fx, fxx))
 
 
-def cuda_find_fy(f: Scalar, geo: Scalar, vel: Vector, scheme: Callable, coeff, *args):
-    cuda_fy = cp.zeros_like(f.data.gpu[0])
-    if cuda_fy.shape[1] != 1:
-        for i in range(cuda_fy.shape[0]):
-            for k in range(cuda_fy.shape[2]):
-                cuda_fy[i, : k] = scheme(f.data.gpu[0, i, :, k], vel.y.data.gpu[0, i, :, k],
-                                         geo.dy, f.blockspergrid[1], f.threadsperblock[1], coeff[1], *args)
-    return cuda_fy
+@njit(parallel=True, fastmath=True, nogil=True)
+def ccd_y(f: np.ndarray, dy: float64):
+    fy = np.zeros_like(f)
+    fyy = np.zeros_like(f)
+    buffer = np.zeros(f.shape[1])
+    if f.shape[1] != 1:
+        for i in prange(f.shape[0]):
+            for k in prange(f.shape[2]):
+                _fy, _fyy = CCD_full(f[i, :, k], buffer, dy)
+                fy[i, :, k] = _fy
+                fyy[i, :, k] = _fyy
+    return np.stack((fy, fyy))
 
 
-def cuda_find_fz(f: Scalar, geo: Scalar, vel: Vector, scheme: Callable, coeff, *args):
-    cuda_fz = cp.zeros_like(f.data.gpu[0])
-    if cuda_fz.shape[2] != 1:
-        for i in range(cuda_fz.shape[0]):
-            for j in range(cuda_fz.shape[1]):
-                cuda_fz[i, j, :] = scheme(f.data.gpu[0, i, j, :], vel.z.data.gpu[0, i, j, :],
-                                          geo.dz, f.blockspergrid[2], f.threadsperblock[2], coeff[2], *args)
-    return cuda_fz
+@njit(parallel=True, fastmath=True, nogil=True)
+def ccd_z(f: np.ndarray, dz: float64):
+    fz = np.zeros_like(f)
+    fzz = np.zeros_like(f)
+    buffer = np.zeros(f.shape[2])
+    if f.shape[2] != 1:
+        for i in prange(f.shape[0]):
+            for j in prange(f.shape[1]):
+                _fz, _fzz = CCD_full(f[i, j, :], buffer, dz)
+                fz[i, j, :] = _fz
+                fzz[i, j, :] = _fzz
+    return np.stack((fz, fzz))

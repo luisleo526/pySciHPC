@@ -33,28 +33,18 @@ import numpy as np
 import pickle
 @njit(float64[:,:](float64[:,:], float64[:], float64[:], float64, float64, int32))
 def init(f:np.ndarray, x_grids:np.ndarray, y_grids:np.ndarray, dx:float, dy:float, resolution:int):
-    for i in prange(0, f.shape[0]):
-        for j in prange(0, f.shape[1]):
-            if i != 0:
-                xc = 0.5 * (x_grids[i] + x_grids[i - 1])
-            else:
-                xc = x_grids[i]
-            if j != 0:
-                yc = 0.5 * (y_grids[j] + y_grids[j - 1])
-            else:
-                yc = y_grids[j]
+    assert f.shape[0] == x_grids.size - 1
+    assert f.shape[1] == y_grids.size - 1
+    for i in prange(f.shape[0]):
+        for j in prange(f.shape[1]):
+        
+            xc = x_grids[i]
+            yc = y_grids[j]
 
             for ii in range(resolution):
                 for jj in range(resolution):
-                    if i not in [0, f.shape[0] - 1]:
-                        x = xc + ii * dx / 30
-                    else:
-                        x = xc + ii * dx / 30 / 2
-                    if j not in [0, f.shape[1] - 1]:
-                        y = yc + jj * dy / 30
-                    else:
-                        y = yc + jj * dy / 30 / 2
-
+                    x = xc + ii * dx / resolution
+                    y = yc + jj * dy / resolution
 %s
             f[i, j] = 2.0 * f[i, j] - 1.0
     return f

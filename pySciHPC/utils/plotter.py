@@ -16,7 +16,7 @@ class VTKPlotter:
         self.directory = f"./{project_name}_VTK"
         self.axis = [geometry.x.cpu, geometry.y.cpu]
         if geometry.ndim > 2:
-            self.axis.append(geometry.z)
+            self.axis.append(geometry.z.cpu)
         self.ndim = geometry.ndim
         self.index = -1
 
@@ -25,10 +25,10 @@ class VTKPlotter:
         self.vtk = RectilinearGrid(f"{self.directory}/{self.index}.vtr", self.axis, compression=True)
 
     def add_scalar(self, data: np.ndarray, name: str):
-        self.vtk.addPointData(DataArray(data, range(self.ndim), name))
+        self.vtk.addCellData(DataArray(data, range(self.ndim), name))
 
     def add_vector(self, data: np.ndarray, name: str):
-        self.vtk.addPointData(DataArray(data, range(1, self.ndim + 1), name))
+        self.vtk.addCellData(DataArray(data, range(1, self.ndim + 1), name))
 
     def close(self):
         self.vtk.write()

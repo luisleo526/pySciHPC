@@ -22,22 +22,21 @@ if __name__ == "__main__":
 
     initial_condition = ["(x-0.5)**2+(y-0.75)**2 <=0.15**2", ["not (abs(x - 0.5) <= 0.025 and y < 0.75 + 0.15 / 2)"]]
     as_density_2d(phi, geo, initial_condition)
-
-    vel.x.core = -2.0 * np.pi / period * (geo.mesh.y - 0.5)
-    vel.y.core = 2.0 * np.pi / period * (geo.mesh.x - 0.5)
-
     zero_order(phi.data.cpu[0], phi.ghc, phi.ndim)
-    zero_order(vel.x.data.cpu[0], phi.ghc, phi.ndim)
-    zero_order(vel.y.data.cpu[0], phi.ghc, phi.ndim)
+
+    vel.core = -2.0 * np.pi / period * (geo.mesh.y - 0.5), 2.0 * np.pi / period * (geo.mesh.x - 0.5)
+    vel.apply_bc_for_cell(zero_order)
 
     plotter.create()
     plotter.add_scalar(phi.core, "phi")
+    plotter.add_vector(vel.core, "velocity")
     plotter.close()
 
-    solve_redistance(phi, period=4.0, cfl=0.1, init=True)
+    solve_redistance(phi, period=4.0, cfl=0.01, init=True)
 
     plotter.create()
     plotter.add_scalar(phi.core, "phi")
+    plotter.add_vector(vel.core, "velocity")
     plotter.close()
 
     phi.snap()
@@ -48,7 +47,7 @@ if __name__ == "__main__":
 
     while t < period:
 
-        solve_hyperbolic(phi, vel, geo, rk3, zero_order, pure_convection_source, dt, UCCD)
+        solve_hyperbolic(phi, vel, rk3, zero_order, pure_convection_source, dt, UCCD)
         solve_mpls(phi)
         phi.snap()
 
@@ -57,8 +56,8 @@ if __name__ == "__main__":
             phi.print_error()
             print("=" * 30)
 
-        t = t + dt
         cnt += 1
+        t = cnt * dt
 
         if cnt % int(period / 4 / dt) == 0:
             plotter.create()

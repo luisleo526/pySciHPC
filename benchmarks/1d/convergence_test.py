@@ -22,24 +22,18 @@ def run(N, source, bc, ghc, c, scheme, dt):
     phi = Scalar(**geo_dict, no_axis=True)
 
     phi.core = np.sin(np.pi * geo.mesh.x - np.sin(np.pi * geo.mesh.x) / np.pi)
-    # phi.core = np.sin(np.pi * geo.mesh.x)
     bc(phi.data.cpu[0], phi.ghc, phi.ndim)
 
     vel = Vector(**geo_dict)
-    vel.x.data.cpu[0] = np.ones_like(phi.data.cpu[0]) * c
+    vel.x.cell.cpu[0] = np.ones_like(phi.data.cpu[0]) * c
 
     t = 0.0
     cpu_time = -time.time()
     while t < 2.0:
         t += dt
-        solve_hyperbolic(phi, vel, geo, rk3, bc, source, dt, scheme)
+        solve_hyperbolic(phi, vel, rk3, bc, source, dt, scheme)
 
-    phi_exact = Scalar(**geo_dict)
-    phi_exact.core = np.sin(np.pi * (geo.mesh.x - c * t) - np.sin(np.pi * (geo.mesh.x - c * t)) / np.pi)
-    # phi_exact.core = np.sin(np.pi * (geo.mesh.x - c * t))
-    bc(phi_exact.data.cpu[0], phi_exact.ghc, phi_exact.ndim)
-
-    error = l2_norm(phi_exact.core, phi.core)
+    error = l2_norm(np.sin(np.pi * (geo.mesh.x - c * t) - np.sin(np.pi * (geo.mesh.x - c * t)) / np.pi), phi.core)
     return error, cpu_time + time.time()
 
 

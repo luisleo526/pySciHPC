@@ -5,11 +5,12 @@ from pySciHPC.core.data import Scalar
 class LevelSetFunction(Scalar):
     def __init__(self, _size: list[int], ghc: int, _axis_data: list[tuple[float, float]], num_of_data: int = 1,
                  no_axis=False, no_data=False, use_cuda=False, interface_width: float = 0.0,
-                 density_ratio: float = 1.0):
+                 density_ratio: float = 1.0, viscosity_ratio: float = 1.0):
         super().__init__(_size, ghc, _axis_data, num_of_data, no_axis, no_data, use_cuda)
 
         self.interface_width = interface_width
         self.density_ratio = density_ratio
+        self.viscosity_ratio = viscosity_ratio
         self.vol_history = []
         self.mass_history = []
 
@@ -40,6 +41,16 @@ class LevelSetFunction(Scalar):
     @property
     def sign(self):
         return Sign(self.data.cpu[0], self.interface_width)
+
+    @property
+    def rho(self):
+        h = self.heaviside
+        return h + (1.0 - h) * self.density_ratio
+
+    @property
+    def mu(self):
+        h = self.heaviside
+        return h + (1.0 - h) * self.viscosity_ratio
 
     def print_error(self, snap=False):
         if snap:

@@ -13,7 +13,7 @@ from pySciHPC.core.functions.derivatives import find_fx
 from pySciHPC.core.data import Scalar, Vector
 from pySciHPC.core.scheme.temporal import rk3
 from pySciHPC.core.scheme.spatial import UCCD
-from pySciHPC.utils import find_order, l2_norm
+from pySciHPC.utils.utils import find_order, l2_norm
 
 
 @njit(parallel=True, fastmath=True, nogil=True)
@@ -44,19 +44,15 @@ def run(N, source, bc, ghc, ts, scheme, dt):
     bc(phi.data.cpu[0], phi.ghc, phi.ndim)
 
     vel = Vector(**geo_dict)
-    vel.x.data.cpu[0] = phi.data.cpu[0]
+    vel.x.cell.cpu[0] = phi.data.cpu[0]
 
     cpu_time = -time.time()
     t = 0.0
     while t < 0.75 * ts:
         t += dt
-        solve_hyperbolic(phi, vel, geo, rk3, bc, source, dt, scheme)
+        solve_hyperbolic(phi, vel, rk3, bc, source, dt, scheme)
 
-    phi_exact = Scalar(**geo_dict, no_axis=True)
-    phi_exact.core = find_exact_solution(geo.mesh.x, t, ts)
-    bc(phi_exact.data.cpu[0], phi_exact.ghc, phi_exact.ndim)
-
-    error = l2_norm(phi_exact.core, phi.core)
+    error = l2_norm(find_exact_solution(geo.mesh.x, t, ts), phi.core)
     return error, cpu_time + time.time()
 
 
