@@ -12,7 +12,7 @@ from pySciHPC.core.boundary_conditions import periodic
 from pySciHPC.core.functions.derivatives import find_fx
 from pySciHPC.core.data import Scalar, Vector
 from pySciHPC.core.scheme.temporal import rk3
-from pySciHPC.core.scheme.spatial import UCCD
+from pySciHPC.core.scheme.spatial import UCCD, QUICK, WENO_JS, WENO_Z
 from pySciHPC.utils.utils import find_order, l2_norm
 
 
@@ -60,4 +60,5 @@ if __name__ == "__main__":
     data = {}
     for i in range(5, 11):
         data[2 ** i] = run(2 ** i, BurgerEq_source_1d, periodic, 3, 2.0, UCCD, 0.1 * 1.0 / 2 ** 10)
+        print(2 ** i, data[2 ** i])
     find_order(data)

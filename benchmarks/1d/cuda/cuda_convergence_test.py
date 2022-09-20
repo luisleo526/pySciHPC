@@ -8,7 +8,7 @@ from numba import config
 
 from pySciHPC.cuda import solve_hyperbolic
 from pySciHPC.cuda.boundary_conditions.periodic import cuda_periodic
-from pySciHPC.cuda.solvers.uccd_solver import CudaUCCDSovler
+from pySciHPC.cuda.solvers import CudaUCCDSovler, CudaWENOSolver
 from pySciHPC.core.data import Scalar, Vector
 from pySciHPC.cuda.pde_source.convection import cuda_pure_convection_source
 from pySciHPC.cuda.scheme.temporal.Runge_Kutta import cuda_rk3
@@ -51,7 +51,7 @@ if __name__ == "__main__":
     data = {}
     for i in range(5, 10):
         N = 2 ** i
-        data[N] = run(N, cuda_pure_convection_source, cuda_periodic, 3, 1.0, CudaUCCDSovler, 0.1 / 2 ** 9)
+        data[N] = run(N, cuda_pure_convection_source, cuda_periodic, 3, 1.0, CudaWENOSolver, 0.1 / 2 ** 9)
         print(N, data[N])
     print("---Positive speed---")
     find_order(data)
@@ -59,7 +59,7 @@ if __name__ == "__main__":
     data = {}
     for i in range(5, 10):
         N = 2 ** i
-        data[N] = run(N, cuda_pure_convection_source, cuda_periodic, 3, -1.0, CudaUCCDSovler, 0.1 / 2 ** 9)
+        data[N] = run(N, cuda_pure_convection_source, cuda_periodic, 3, -1.0, CudaWENOSolver, 0.1 / 2 ** 9)
         print(N, data[N])
     print("---Negative speed---")
     find_order(data)

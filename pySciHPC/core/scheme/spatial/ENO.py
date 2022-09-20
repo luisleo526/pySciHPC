@@ -6,10 +6,11 @@ from numba import njit, float64, prange
 from ....utils.matrix_solver import TDMA
 from ....utils.utils import pad
 
+epsilon = 1.0e-8
+
 
 @njit(float64[:](float64, float64, float64))
-def WENO_weights_JS(b1: float64, b2: float64, b3: float64):
-    epsilon = 1.0e-14
+def WENO_weights_JS(b1: float, b2: float, b3: float):
     weights = np.zeros(3, dtype='float64')
 
     a1 = 1.0 / (epsilon + b1) ** 2
@@ -24,8 +25,7 @@ def WENO_weights_JS(b1: float64, b2: float64, b3: float64):
 
 
 @njit(float64[:](float64, float64, float64))
-def WENO_weights_Z(b1: float64, b2: float64, b3: float64):
-    epsilon = 1.0e-14
+def WENO_weights_Z(b1: float, b2: float, b3: float):
     weights = np.zeros(3, dtype='float64')
 
     a1 = 1.0 * (1.0 + abs(b1 - b3) / (epsilon + b1))
@@ -40,7 +40,7 @@ def WENO_weights_Z(b1: float64, b2: float64, b3: float64):
 
 
 @njit
-def WENO_p(a: float64, b: float64, c: float64, d: float64, e: float64, weights: Callable):
+def WENO_p(a: float, b: float, c: float, d: float, e: float, weights: Callable):
     '''
     a : i-1 | b: i | c: i+1 | d: i+2 | e: i+3
     '''
@@ -56,7 +56,7 @@ def WENO_p(a: float64, b: float64, c: float64, d: float64, e: float64, weights: 
 
 
 @njit(float64[:](float64, float64, float64, float64, float64))
-def WENO_indicators_p(a: float64, b: float64, c: float64, d: float64, e: float64):
+def WENO_indicators_p(a: float, b: float, c: float, d: float, e: float):
     '''
     a : i-1 | b: i | c: i+1 | d: i+2 | e: i+3
     '''
@@ -69,7 +69,7 @@ def WENO_indicators_p(a: float64, b: float64, c: float64, d: float64, e: float64
 
 
 @njit
-def WENO_m(a: float64, b: float64, c: float64, d: float64, e: float64, weights: Callable):
+def WENO_m(a: float, b: float, c: float, d: float, e: float, weights: Callable):
     '''
     a : i-2 | b: i-1 | c: i | d: i+1 | e: i+2
     '''
@@ -83,7 +83,7 @@ def WENO_m(a: float64, b: float64, c: float64, d: float64, e: float64, weights: 
 
 
 @njit(float64[:](float64, float64, float64, float64, float64))
-def WENO_indicators_m(a: float64, b: float64, c: float64, d: float64, e: float64):
+def WENO_indicators_m(a: float, b: float, c: float, d: float, e: float):
     '''
     a : i-2 | b: i-1 | c: i | d: i+1 | e: i+2
     '''
@@ -96,14 +96,14 @@ def WENO_indicators_m(a: float64, b: float64, c: float64, d: float64, e: float64
 
 
 @njit(float64[:](float64[:], float64[:], float64), parallel=True, fastmath=True, nogil=True)
-def WENO_JS(ff: np.ndarray, c: np.ndarray, dx: float64):
+def WENO_JS(ff: np.ndarray, c: np.ndarray, dx: float):
     fh = np.zeros_like(ff)
     fx = np.zeros_like(ff)
     f = pad(ff, 3)
 
-    for i in prange(ff.size):
+    for i in prange(ff.size - 1):
         I = i + 3
-        if c[i] < 0.0:
+        if c[i] + c[i + 1] < 0.0:
             fh[i] = WENO_p(f[I - 1], f[I], f[I + 1], f[I + 2], f[I + 3], WENO_weights_JS)
         else:
             fh[i] = WENO_m(f[I - 2], f[I - 1], f[I], f[I + 1], f[I + 2], WENO_weights_JS)
@@ -115,14 +115,14 @@ def WENO_JS(ff: np.ndarray, c: np.ndarray, dx: float64):
 
 
 @njit(float64[:](float64[:], float64[:], float64), parallel=True, fastmath=True, nogil=True)
-def WENO_Z(ff: np.ndarray, c: np.ndarray, dx: float64):
+def WENO_Z(ff: np.ndarray, c: np.ndarray, dx: float):
     fh = np.zeros_like(ff)
     fx = np.zeros_like(ff)
     f = pad(ff, 3)
 
-    for i in prange(ff.size):
+    for i in prange(ff.size - 1):
         I = i + 3
-        if c[i] < 0.0:
+        if c[i] + c[i + 1] < 0.0:
             fh[i] = WENO_p(f[I - 1], f[I], f[I + 1], f[I + 2], f[I + 3], WENO_weights_Z)
         else:
             fh[i] = WENO_m(f[I - 2], f[I - 1], f[I], f[I + 1], f[I + 2], WENO_weights_Z)
@@ -134,7 +134,7 @@ def WENO_Z(ff: np.ndarray, c: np.ndarray, dx: float64):
 
 
 @njit(float64[:](float64[:], float64[:], float64), parallel=True, fastmath=True, nogil=True)
-def CRWENO(f: np.ndarray, c: np.ndarray, dx: float64):
+def CRWENO(f: np.ndarray, c: np.ndarray, dx: float):
     size = f.size - 6
     ghc = 3
 
@@ -142,7 +142,6 @@ def CRWENO(f: np.ndarray, c: np.ndarray, dx: float64):
     fm = np.zeros_like(f)
     fh = np.zeros_like(f)
     fx = np.zeros_like(f)
-    epsilon = 1.0e-10
 
     for i in [-1, size - 1]:
         I = i + ghc
@@ -200,8 +199,8 @@ def CRWENO(f: np.ndarray, c: np.ndarray, dx: float64):
     sm[-1] = sm[-1] - cm[-1] * fm[size + ghc - 1]
     fm[ghc:size + ghc - 1] = TDMA(am, bm, cm, sm)
 
-    for i in prange(f.size):
-        if c[i] > 0.0:
+    for i in prange(f.size - 1):
+        if c[i] + c[i + 1] > 0.0:
             fh[i] = fm[i]
         else:
             fh[i] = fp[i]
@@ -213,7 +212,7 @@ def CRWENO(f: np.ndarray, c: np.ndarray, dx: float64):
 
 
 @njit(float64[:](float64[:], float64[:], float64), parallel=True, fastmath=True, nogil=True)
-def CRWENO_LD(f: np.ndarray, c: np.ndarray, dx: float64):
+def CRWENO_LD(f: np.ndarray, c: np.ndarray, dx: float):
     size = f.size - 6
     ghc = 3
 
@@ -221,7 +220,6 @@ def CRWENO_LD(f: np.ndarray, c: np.ndarray, dx: float64):
     fm = np.zeros_like(f)
     fh = np.zeros_like(f)
     fx = np.zeros_like(f)
-    epsilon = 1.0e-10
 
     for i in [-1, size - 1]:
         I = i + ghc
@@ -290,8 +288,8 @@ def CRWENO_LD(f: np.ndarray, c: np.ndarray, dx: float64):
     sm[-1] = sm[-1] - cm[-1] * fm[size + ghc - 1]
     fm[ghc:size + ghc - 1] = TDMA(am, bm, cm, sm)
 
-    for i in prange(f.size):
-        if c[i] > 0.0:
+    for i in prange(f.size - 1):
+        if c[i] + c[i + 1] > 0.0:
             fh[i] = fm[i]
         else:
             fh[i] = fp[i]

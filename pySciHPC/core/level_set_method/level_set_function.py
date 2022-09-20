@@ -1,4 +1,4 @@
-from .basic import find_mass_vol, Heaviside, Delta, Sign
+from .basic import find_mass_vol, Heaviside, Delta, Sign, smooth_with_heaviside
 from pySciHPC.core.data import Scalar
 
 
@@ -44,13 +44,11 @@ class LevelSetFunction(Scalar):
 
     @property
     def rho(self):
-        h = self.heaviside
-        return h + (1.0 - h) * self.density_ratio
+        return smooth_with_heaviside(self.data.cpu[0], self.interface_width, self.density_ratio)
 
     @property
     def mu(self):
-        h = self.heaviside
-        return h + (1.0 - h) * self.viscosity_ratio
+        return smooth_with_heaviside(self.data.cpu[0], self.interface_width, self.viscosity_ratio)
 
     def print_error(self, snap=False):
         if snap:

@@ -47,6 +47,12 @@ def Delta(x, eta):
     return delta
 
 
+@njit(float64[:, :, :](float64[:, :, :], float64, float64), parallel=True, fastmath=True, nogil=True)
+def smooth_with_heaviside(phi: np.ndarray, width: float, coef: float):
+    h = Heaviside(phi, width)
+    return h + (1.0 - h) * coef
+
+
 @njit(float64[:](float64[:, :, :], float64, float64, float64, int32, int32), fastmath=True, parallel=True, nogil=True)
 def find_mass_vol(x, eta, density, dv, ndim, ghc):
     h = Heaviside(x, eta)

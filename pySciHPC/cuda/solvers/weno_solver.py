@@ -6,12 +6,11 @@ from numba import cuda
 
 from .derivatives_solver import CudaDerivativesSolver
 from ..kernels import assign_zero
+from ...core.scheme.spatial.ENO import epsilon
 
 
 @cuda.jit(device=True)
 def js_weights(b1, b2, b3):
-    epsilon = 1.0e-14
-
     a1 = 1.0 / (epsilon + b1) ** 2
     a2 = 6.0 / (epsilon + b2) ** 2
     a3 = 3.0 / (epsilon + b3) ** 2
@@ -25,8 +24,6 @@ def js_weights(b1, b2, b3):
 
 @cuda.jit(device=True)
 def z_weights(b1, b2, b3):
-    epsilon = 1.0e-14
-
     a1 = 1.0 * (1.0 + abs(b1 - b3) / (epsilon + b1))
     a2 = 6.0 * (1.0 + abs(b1 - b3) / (epsilon + b2))
     a3 = 3.0 * (1.0 + abs(b1 - b3) / (epsilon + b3))
