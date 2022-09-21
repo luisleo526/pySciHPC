@@ -1,7 +1,7 @@
 import numpy as np
 
 from pySciHPC.core import solve_hyperbolic
-from pySciHPC.core.boundary_conditions import zero_order
+from pySciHPC.core.boundary_conditions.cell import zero_order
 from pySciHPC.core.data import Scalar, Vector
 from pySciHPC.core.level_set_method import LevelSetFunction, solve_redistance, solve_mpls
 from pySciHPC.core.pde_source.convection_equation import pure_convection_source

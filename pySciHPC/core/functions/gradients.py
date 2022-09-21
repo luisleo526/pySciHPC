@@ -1,8 +1,8 @@
 import numpy as np
 from numba import int32, float64, njit, prange
 
-from ..boundary_conditions.zero_order import zero_order_x, zero_order_y, zero_order_z, zero_order
-from ..functions.derivatives import find_fx, find_fy, find_fz
+from ..boundary_conditions.cell import zero_order
+from ..functions.derivative import find_fx, find_fy, find_fz
 from ..scheme.spatial.CCD import CCD
 
 
@@ -52,8 +52,8 @@ def godunov_wenojs(f: np.ndarray, grids: np.ndarray, ghc: int32, ndim: int32):
                                                   (f[i - 1, j, k] - 2.0 * f[i, j, k] + f[i + 1, j, k]),
                                                   (f[i, j, k] - 2.0 * f[i + 1, j, k] + f[i + 2, j, k]))
 
-    zero_order_x(up, ghc)
-    zero_order_x(um, ghc)
+    zero_order(up, ghc, ndim)
+    zero_order(um, ghc, ndim)
 
     for i in prange(f.shape[0]):
         for k in prange(f.shape[2]):
@@ -71,8 +71,8 @@ def godunov_wenojs(f: np.ndarray, grids: np.ndarray, ghc: int32, ndim: int32):
                                                   (f[i, j - 2, k] - 2.0 * f[i, j - 1, k] + f[i, j, k]),
                                                   (f[i, j - 1, k] - 2.0 * f[i, j, k] + f[i, j + 1, k]),
                                                   (f[i, j, k] - 2.0 * f[i, j + 1, k] + f[i, j + 2, k]))
-    zero_order_y(vp, ghc)
-    zero_order_y(vm, ghc)
+    zero_order(vp, ghc, ndim)
+    zero_order(vm, ghc, ndim)
 
     if ndim > 2:
         for i in prange(f.shape[0]):
@@ -92,8 +92,8 @@ def godunov_wenojs(f: np.ndarray, grids: np.ndarray, ghc: int32, ndim: int32):
                                                       (f[i, j, k - 1] - 2.0 * f[i, j, k] + f[i, j, k + 1]),
                                                       (f[i, j, k] - 2.0 * f[i, j, k + 1] + f[i, j, k + 2]))
 
-        zero_order_z(wp, ghc)
-        zero_order_z(wm, ghc)
+        zero_order(wp, ghc, ndim)
+        zero_order(wm, ghc, ndim)
 
     for i in prange(f.shape[0]):
         for j in prange(f.shape[1]):

@@ -119,26 +119,3 @@ def UCCD(f: np.ndarray, c: np.ndarray, dx: float64):
         fxx[i] = 0.5 * (fxxu[i] + fxxd[i])
 
     return fx
-
-
-@njit(float64[:, :](float64[:], float64[:], float64), parallel=True, fastmath=True, cache=True)
-def UCCD_full(f: np.ndarray, c: np.ndarray, dx: float64):
-    AU, BU, AAU, BBU, AD, BD, AAD, BBD = UCCD_coeffs(f.size, dx)
-    twin_dec(AU, BU, AAU, BBU)
-    twin_dec(AD, BD, AAD, BBD)
-
-    SU, SSU, SD, SSD = UCCD_src(f, f.size, dx)
-
-    fxu, fxxu = twin_bks(AU, BU, AAU, BBU, SU, SSU)
-    fxd, fxxd = twin_bks(AD, BD, AAD, BBD, SD, SSD)
-
-    fx = np.zeros_like(fxu)
-    fxx = np.zeros_like(fxxu)
-    for i in prange(f.size):
-        if c[i] > 0.0:
-            fx[i] = fxu[i]
-        else:
-            fx[i] = fxd[i]
-        fxx[i] = 0.5 * (fxxu[i] + fxxd[i])
-
-    return np.stack((fx, fxx))

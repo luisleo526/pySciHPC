@@ -2,7 +2,7 @@ import sys
 
 sys.path.insert(0, '../../')
 
-from pySciHPC.core.boundary_conditions import zero_order
+from pySciHPC.core.boundary_conditions.cell import zero_order
 from pySciHPC.core.data import Scalar
 from pySciHPC.core.level_set_method import LevelSetFunction, solve_redistance
 from pySciHPC.utils.plotter import VTKPlotter

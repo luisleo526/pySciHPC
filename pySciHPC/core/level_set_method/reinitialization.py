@@ -1,11 +1,11 @@
 import numpy as np
 from numba import njit, float64, int32, boolean, prange
 
-from pySciHPC.core.boundary_conditions import zero_order
-from pySciHPC.core.functions.gradients import godunov_wenojs
-from pySciHPC.core.scheme.temporal import rk3
 from .basic import Delta, Sign
 from .level_set_function import LevelSetFunction
+from ..boundary_conditions.cell import zero_order
+from ..functions.gradients import godunov_wenojs
+from ..scheme.temporal import rk3
 
 
 @njit(float64[:, :, :](float64[:, :, :], float64[:], int32, int32), fastmath=True, parallel=True, nogil=True)

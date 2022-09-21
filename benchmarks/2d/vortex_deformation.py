@@ -4,7 +4,7 @@ sys.path.insert(0, '../../')
 import numpy as np
 
 from numba import njit, float64
-from pySciHPC.core.boundary_conditions import zero_order
+from pySciHPC.core.boundary_conditions.cell import zero_order
 from pySciHPC.core.level_set_method import LevelSetFunction, solve_mpls, inteface_error
 from pySciHPC.core.data import Scalar, Vector
 from pySciHPC.core.pde_source.convection_equation import pure_convection_source

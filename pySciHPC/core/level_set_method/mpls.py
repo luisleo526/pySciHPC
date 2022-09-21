@@ -1,12 +1,11 @@
-from typing import Callable
-
 import numpy as np
 from numba import njit
-from .level_set_function import LevelSetFunction
+
 from .basic import find_mass_vol, Heaviside, Delta
-from pySciHPC.core.scheme.temporal.Runge_Kutta import rk3
-from pySciHPC.core.boundary_conditions import zero_order
-from pySciHPC.core.functions.gradients import CCD_grad
+from .level_set_function import LevelSetFunction
+from ..boundary_conditions.cell import zero_order
+from ..functions.gradients import CCD_grad
+from ..scheme.temporal.Runge_Kutta import rk3
 
 
 @njit(parallel=True, fastmath=True, nogil=True)

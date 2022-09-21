@@ -89,7 +89,7 @@ def CCD(f: np.ndarray, c: np.ndarray, dx: float64):
 
 
 @njit(float64[:, :](float64[:], float64[:], float64), cache=True)
-def CCD_full(f: np.ndarray, c: np.ndarray, dx: float64):
+def CCD_full(f: np.ndarray, dx: float64):
     A, B, AA, BB = CCD_coeffs(f.size, dx)
     twin_dec(A, B, AA, BB)
     S, SS = CCD_src(f, f.size, dx)

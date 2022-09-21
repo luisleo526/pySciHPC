@@ -6,11 +6,11 @@ import time
 import numpy as np
 
 from pySciHPC.core import solve_hyperbolic
-from pySciHPC.core.boundary_conditions import periodic
+from pySciHPC.core.boundary_conditions.cell import periodic
 from pySciHPC.core.data import Scalar, Vector
 from pySciHPC.core.pde_source.convection_equation import pure_convection_source
 from pySciHPC.core.scheme.temporal import rk3
-from pySciHPC.core.scheme.spatial import UCCD, QUICK, WENO_JS, WENO_Z, CRWENO
+from pySciHPC.core.scheme.spatial import UCCD, QUICK, WENO_JS, WENO_Z, CRWENO, UpwindSecondOrder
 from pySciHPC.utils.utils import find_order, l2_norm
 from numba import config
 
@@ -43,14 +43,14 @@ if __name__ == "__main__":
 
     data = {}
     for i in range(5, 10):
-        data[2 ** i] = run(2 ** i, pure_convection_source, periodic, 3, -1.0, UCCD, 0.1 / 2 ** 9)
+        data[2 ** i] = run(2 ** i, pure_convection_source, periodic, 3, -1.0, UpwindSecondOrder, 0.1 / 2 ** 9)
         print(2 ** i, data[2 ** i])
     print("---Negative speed---")
     find_order(data)
 
     data = {}
     for i in range(5, 10):
-        data[2 ** i] = run(2 ** i, pure_convection_source, periodic, 3, 1.0, UCCD, 0.1 / 2 ** 9)
+        data[2 ** i] = run(2 ** i, pure_convection_source, periodic, 3, 1.0, UpwindSecondOrder, 0.1 / 2 ** 9)
         print(2 ** i, data[2 ** i])
     print("---Positive speed---")
     find_order(data)
